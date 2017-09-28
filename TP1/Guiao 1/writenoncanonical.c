@@ -69,13 +69,36 @@ int main(int argc, char** argv)
 	//    buf[25] = '\n';
     
     res = write(fd,buf,255);   
-    printf("%d chars written\n", strlen(buf));
-	sleep(1);
+    printf("SENT = %s\n", buf);
+    sleep(1);
     
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
       perror("tcsetattr");
       exit(-1);
     }
+
+    //BACK TO SENDER
+
+    printf("Waiting for response\n");
+
+    newtio.c_oflag = 0;
+
+    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+      perror("tcsetattr");
+      exit(-1);
+    }
+
+    int it = 0;
+    char ch;
+
+    while (read(fd,&ch,1) && ch!='\0') 
+	 buf[it++] = ch;			
+
+    printf("RECEIVED = %s\n", buf);
+
+
+    tcsetattr(fd,TCSANOW,&oldtio);
     close(fd);
+
     return 0;
 }

@@ -70,22 +70,52 @@ int main(int argc, char** argv)
 
     printf("New termios structure set\n");
 
-	int it=0;
-	char buf2[10000];
+	int it = 0;
+	char ch;
 	
-    while (STOP==FALSE) {       /* loop for input */
-      res = read(fd,buf,255);   /* returns after 5 chars have been input */
-      buf[res]=0;
+	while (read(fd,&ch,1) && ch!='\0') {
+		buf[it++] = ch;			
+	}
+
+
+	printf("RECEIVED=%s\n", buf);
+
+    newtio.c_oflag = OPOST;
+
+    tcflush(fd, TCIOFLUSH);
+
+    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+      perror("tcsetattr");
+      exit(-1);
+    }
+
+	buf[strlen(buf)]='\0';
+
+    res = write(fd,buf,255);   
+    printf("%d chars written\n", strlen(buf));
+    sleep(1);
+
+	printf("SENT=%s\n", buf);
+
+	/*	while (STOP == FALSE) {
+	if (read(fd,&ch,1) && ch!='\0')
+		buf[it++] = ch;	
+	else
+		STOP=TRUE;
+	}*/
+
+    /*while (STOP==FALSE) {       /* loop for input */
+      //res = read(fd,buf,255);   /* returns after 5 chars have been input */
+      /*buf[res]=0;
 	  it++;               /* so we can printf... */
+	  /*printf("%s\n", buf[it]);
       if (buf[it]=='\0') STOP=TRUE;
 	  else {
 		//printf(":%s:%d\n", buf, res);
 		strcat(&buf2, &buf);
-
-	}
-    }
-
-	printf("%s\n", buf2);
+		printf(":%s\n", buf2);
+	  }
+    }*/
 
   /* 
     O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guião 
