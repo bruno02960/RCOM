@@ -73,6 +73,7 @@ int main(int argc, char** argv)
 
 	int it = 0;
 	char ch;
+	/*GUIAO 2*/
 
 	while (read(fd,&ch,1)) {
 
@@ -86,10 +87,6 @@ int main(int argc, char** argv)
 	buf[it++]='\0';
 
 
-	/*GUIAO 2*/
-	
-
-
 	newtio.c_oflag = OPOST;
 
 	tcflush(fd, TCIOFLUSH);
@@ -99,11 +96,10 @@ int main(int argc, char** argv)
 		exit(-1);
 	}
 
-	res = write(fd,$ua,5); 
+	res = write(fd,&ua,5); 
+
 	printf("%d chars written\n", res); 
 	sleep(1);
-
-	//printf("SENT=%s\n", buf);
 
 	tcsetattr(fd,TCSANOW,&oldtio);
 	close(fd);
