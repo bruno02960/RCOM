@@ -10,8 +10,10 @@
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 #define FALSE 0
 #define TRUE 1
+//UA 
 #define FLAG 0x7E
-
+#define ADDR 0x03
+#define CTRL 0x07
 
 volatile int STOP=FALSE;
 
@@ -20,6 +22,7 @@ int main(int argc, char** argv)
 	int fd,c, res;
 	struct termios oldtio,newtio;
 	char buf[10000];
+	char ua[] = {FLAG, ADDR, CTRL, ADDR^CTRL, FLAG};
 
 	if ( (argc < 2) || 
 		((strcmp("/dev/ttyS0", argv[1])!=0) && 
@@ -96,7 +99,7 @@ int main(int argc, char** argv)
 		exit(-1);
 	}
 
-	res = write(fd,buf,strlen(buf)+1);   //plus 1 due to termination char('\0')
+	res = write(fd,$ua,5); 
 	printf("%d chars written\n", res); 
 	sleep(1);
 
