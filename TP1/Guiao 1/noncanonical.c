@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     /* set input mode (non-canonical, no echo,...) */
 	newtio.c_lflag = 0;
     newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 5;   /* blocking read until 5 chars received */
+    newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
 
   /* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
@@ -73,6 +73,8 @@ int main(int argc, char** argv)
 		buf[it++] = ch;			
 	}
 
+	buf[it++]='\0';
+
 	printf("RECEIVED=%s\n", buf);
 
 	newtio.c_oflag = OPOST;
@@ -84,10 +86,8 @@ int main(int argc, char** argv)
 		exit(-1);
 	}
 
-	buf[strlen(buf)]='\0';
-
-	res = write(fd,buf,255);   
-	printf("%d chars written\n", strlen(buf));
+	res = write(fd,buf,strlen(buf)+1);   //plus 1 due to termination char('\0')
+	printf("%d chars written\n", res); 
 	sleep(1);
 
 	printf("SENT=%s\n", buf);
