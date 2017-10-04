@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   newtio.c_lflag = 0;
 
   newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-  newtio.c_cc[VMIN]     = 5;   /* blocking read until 5 chars received */
+  newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
 
 
   tcflush(fd, TCIFLUSH);
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 
   buf[strlen(buf)]='\0';
 
-  res = write(fd,buf,255);   
+  res = write(fd,buf,strlen(buf)+1);   
   printf("SENT = %s\n", buf);
   sleep(1);
 
@@ -93,6 +93,8 @@ int main(int argc, char** argv)
 
   while (read(fd,&ch,1) && ch!='\0') 
     buf[it++] = ch;			
+
+  buf[it++] = '\0';			
 
   printf("RECEIVED = %s\n", buf);
 
