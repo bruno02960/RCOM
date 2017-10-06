@@ -5,6 +5,9 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
@@ -13,16 +16,18 @@
 //UA 
 #define FLAG 0x7E
 #define ADDR 0x03
-#define CTRL 0x07
+#define CTRL_UA 0x07
 
 volatile int STOP=FALSE;
 
 int main(int argc, char** argv)
 {
-	int fd,c, res;
+	int fd, res;
 	struct termios oldtio,newtio;
-	char buf[10000];
-	char ua[] = {FLAG, ADDR, CTRL, ADDR^CTRL, FLAG};
+	char buf[255];
+	char ua[] = {FLAG, ADDR, CTRL_UA, ADDR^CTRL_UA, FLAG};
+	int it = 0;
+	char ch;
 
 	if ( (argc < 2) || 
 		((strcmp("/dev/ttyS0", argv[1])!=0) && 
@@ -34,7 +39,7 @@ int main(int argc, char** argv)
 
   /*
     Open serial port device for reading and writing and not as controlling tty
-    because we don't want to get killed if linenoise sends CTRL-C.
+    because we don't want to get killed if linenoise sends CTRL_UA-C.
   */
 
 	fd = open(argv[1], O_RDWR | O_NOCTTY );
@@ -64,20 +69,15 @@ int main(int argc, char** argv)
 
 	tcflush(fd, TCIOFLUSH);
 
+	/* New termios structure set */
 	if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
 		perror("tcsetattr");
 		exit(-1);
 	}
 
-	printf("New termios structure set\n");
-
-	int it = 0;
-	char ch;
-	/*GUIAO 2*/
+	printf("Waiting for SET\n");
 
 	while (read(fd,&ch,1)) {
-
-		printf("buf[%d] = %02x\n", it, ch);		
 		buf[it++] = ch;		
 
 		if (it == 5)
@@ -85,7 +85,6 @@ int main(int argc, char** argv)
 	}
 
 	buf[it++]='\0';
-
 
 	newtio.c_oflag = OPOST;
 
@@ -98,10 +97,11 @@ int main(int argc, char** argv)
 
 	res = write(fd,&ua,5); 
 
-	printf("%d chars written\n", res); 
 	sleep(1);
-
+	printf("UA successfully sent\n");
+	
 	tcsetattr(fd,TCSANOW,&oldtio);
 	close(fd);
+	
 	return 0;
 }
