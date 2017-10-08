@@ -62,7 +62,7 @@ int processBytes(unsigned char c) {
 			}
 			break;
 		case A_RCV:
-			if (c == CTRL) {
+			if (c == CTRL/* WHAT'S TO RECEIVE? */) {
 			ua[state]=c;
 			state++;
 			}
