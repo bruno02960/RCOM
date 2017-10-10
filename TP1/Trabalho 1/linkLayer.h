@@ -1,6 +1,6 @@
 #pragma once
 
-struct linkLayer {
+struct linkLayer_t {
 	char port[20];					/*Dispositivo /dev/ttySx, x = 0, 1*/
 	int baudRate;					/*Velocidade de transmissão*/
 	unsigned int sequenceNumber;	/*Número de sequência da trama: 0, 1*/
@@ -8,3 +8,5 @@ struct linkLayer {
 	unsigned int numTransmissions;	/*Número de tentativas em caso de falha*/
 	char frame[MAX_SIZE];			/*Trama*/
 }
+
+extern linkLayer_t* linkL;
