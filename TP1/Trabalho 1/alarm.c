@@ -2,22 +2,35 @@
 #include <signal.h>
 #include <stdio.h>
 
-int flag=1, conta=1;
+int alarmFlag = 0;
 
-void handerALRM()					// atende alarme
+void alarmHandler()
 {
-	printf("alarme # %d\n", conta);
-	flag=1;
-	conta++;
+	printf("Alarm!\n");
+	alarmFlag = 1;
 }
 
 
 void setAlarm() {
-	(void) signal(SIGALRM, handerALRM);	// instala  rotina que atende interrupcao
-	alarm(3);                 		// activa alarme de 3s							TIME
+	struct sigaction new;
+
+	/* Set up the structure to specify the new action. */
+	new.sa_handler = alarmHandler;
+	sigemptyset (&new.sa_mask);
+	new.sa_flags = 0;
+
+	alarmFlag = 0;
+
+	alarm(linkL->timeout);
 }
 
 void stopAlarm() {
-	(void) signal(SIGALRM, NULL);	// instala  rotina que atende interrupcao
-	alarm(0);                 		// activa alarme de 3s							TIME
+	struct sigaction new;
+
+	/* Set up the structure to specify the new action. */
+	new.sa_handler = NULL;
+	sigemptyset (&new.sa_mask);
+	new.sa_flags = 0;
+
+	alarm(0);
 }

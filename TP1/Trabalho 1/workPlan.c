@@ -1,27 +1,35 @@
+#include "alarm.h"
+
 #define ERROR -1
 #define TRANSMITTER 0
 #define RECEIVER 1
 
 int llopen(int porta, int flag) {
-	int fd;
+	int alarmCounter = 0;
 
 	/* Guarda flag para uso futuro */
+	appL.status -> flag;
 
-	switch(flag){
+	switch(appL->status) {
 		case TRANSMITTER:
-		/* codigo do writenoncanonical.c */
-		/* Escreve SET */
-		/* Recebe UA */
-		break;
+			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
+				if (alarmCounter == 0 || alarmFlag == 1) {
+					setAlarm();
+					/* escreve SET */
+					alarmFlag = 0;
+					alarmCounter++;
+				}
 
+				/* Recebe UA */
+			}	
+
+			stopAlarm();
+
+			/* Verificar sucesso / insucesso */
+			break;
 		case RECEIVER:
-		/* codigo do noncanonical.c */
-		/* Recebe SET */
-		/* Escreve UA */
-		break;
-
-		default:
-		break;
+			if( /* Recebe SET */)
+				/* Escreve UA */	
 	}
 
 	return fd;
@@ -30,7 +38,32 @@ int llopen(int porta, int flag) {
 }
 
 int llwrite(int fd, char * buffer, int length) {
+	int alarmCounter = 0;
 	int written;
+
+	while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
+		if (alarmCounter == 0 || alarmFlag == 1) {
+			setAlarm();
+			/* escreve I */
+			alarmFlag = 0;
+			alarmCounter++;
+		}
+
+		/* Recebe resposta
+
+		if ( RR ) {
+
+	stopAlarm();
+	
+		} else if ( REJ ) {
+
+	stopAlarm();
+	
+		} */
+	}	
+
+	/* Verificar sucesso / insucesso */
+
 	/* 
 	codigo do writenoncanonical.c 
 
@@ -38,13 +71,20 @@ int llwrite(int fd, char * buffer, int length) {
 	Espera por RR / REJ
 	*/
 
-	return written;
+return written;
 	/*	– número de caracteres escritos
 		– valor negativo em caso de erro */
 }
 
 int llread(int fd, char * buffer) {
 	int read;
+
+	while(1) {
+		/* Recebe I */
+
+		/* Verifica info recebida e escreve RR / REJ */
+	}
+
 	/*
 	codigo do noncanonical.c
 
@@ -59,6 +99,44 @@ int llread(int fd, char * buffer) {
 }
 
 int llclose(int fd) {
+	int alarmCounter = 0;
+
+	switch(appL->status) {
+		case TRANSMITTER:
+			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
+				if (alarmCounter == 0 || alarmFlag == 1) {
+					setAlarm();
+					/* escreve SET */
+					alarmFlag = 0;
+					alarmCounter++;
+				}
+
+				/* Recebe DISC */
+				/* Envia UA */
+			}	
+
+			stopAlarm();
+
+			/* Verificar sucesso / insucesso */
+			break;
+		case RECEIVER:
+			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
+				if (alarmCounter == 0 || alarmFlag == 1) {
+					setAlarm();
+					/* escreve SET */
+					alarmFlag = 0;
+					alarmCounter++;
+				}
+
+				/* Recebe UA */
+			}	
+
+			stopAlarm();
+
+			/* Verificar sucesso / insucesso */
+			break;
+	}
+
 	/*
 	Escreve DISC
 	Recebe DISC
@@ -153,10 +231,6 @@ int writeSet(int fd) {
 	}
 
 	return 0;
-}
-
-int openSerialPort(char *port) {
-	return open(port, O_RDWR | O_NOCTTY );
 }
 
 /* Not finished AT ALL */
