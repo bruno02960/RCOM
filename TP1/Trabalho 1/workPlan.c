@@ -1,8 +1,8 @@
 #include "alarm.h"
 
-#define ERROR -1
-#define TRANSMITTER 0
-#define RECEIVER 1
+typedef enum {
+	SET, DISC, UA, RR, REJ
+} Command
 
 int llopen(int porta, int flag) {
 	int alarmCounter = 0;
@@ -13,26 +13,26 @@ int llopen(int porta, int flag) {
 	switch(appL->status) {
 		case TRANSMITTER:
 			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-				if (alarmCounter == 0 || alarmFlag == 1) {
-					setAlarm();
-					/* escreve SET */
-					alarmFlag = 0;
-					alarmCounter++;
-				}
+		if (alarmCounter == 0 || alarmFlag == 1) {
+			setAlarm();
+			writeCommand(SET);
+			alarmFlag = 0;
+			alarmCounter++;
+		}
 
 				/* Recebe UA */
-			}	
+	}	
 
-			stopAlarm();
+	stopAlarm();
 
 			/* Verificar sucesso / insucesso */
-			break;
-		case RECEIVER:
+	break;
+	case RECEIVER:
 			if( /* Recebe SET */)
 				/* Escreve UA */	
-	}
+}
 
-	return fd;
+return fd;
 	/*	– identificador da ligação de dados
 		– valor negativo em caso de erro */
 }
@@ -42,12 +42,12 @@ int llwrite(int fd, char * buffer, int length) {
 	int written;
 
 	while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-		if (alarmCounter == 0 || alarmFlag == 1) {
-			setAlarm();
+	if (alarmCounter == 0 || alarmFlag == 1) {
+		setAlarm();
 			/* escreve I */
-			alarmFlag = 0;
-			alarmCounter++;
-		}
+		alarmFlag = 0;
+		alarmCounter++;
+	}
 
 		/* Recebe resposta
 
@@ -60,7 +60,7 @@ int llwrite(int fd, char * buffer, int length) {
 	stopAlarm();
 	
 		} */
-	}	
+}	
 
 	/* Verificar sucesso / insucesso */
 
@@ -104,38 +104,38 @@ int llclose(int fd) {
 	switch(appL->status) {
 		case TRANSMITTER:
 			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-				if (alarmCounter == 0 || alarmFlag == 1) {
-					setAlarm();
+		if (alarmCounter == 0 || alarmFlag == 1) {
+			setAlarm();
 					/* escreve SET */
-					alarmFlag = 0;
-					alarmCounter++;
-				}
+			alarmFlag = 0;
+			alarmCounter++;
+		}
 
 				/* Recebe DISC */
 				/* Envia UA */
-			}	
+	}	
 
-			stopAlarm();
+	stopAlarm();
 
 			/* Verificar sucesso / insucesso */
-			break;
-		case RECEIVER:
+	break;
+	case RECEIVER:
 			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-				if (alarmCounter == 0 || alarmFlag == 1) {
-					setAlarm();
+	if (alarmCounter == 0 || alarmFlag == 1) {
+		setAlarm();
 					/* escreve SET */
-					alarmFlag = 0;
-					alarmCounter++;
-				}
+		alarmFlag = 0;
+		alarmCounter++;
+	}
 
 				/* Recebe UA */
-			}	
+}	
 
-			stopAlarm();
+stopAlarm();
 
 			/* Verificar sucesso / insucesso */
-			break;
-	}
+break;
+}
 
 	/*
 	Escreve DISC
@@ -143,7 +143,7 @@ int llclose(int fd) {
 	Escreve UA
 	*/
 
-	return 1;
+return 1;
 	/*	– valor positivo em caso de sucesso
 		– valor negativo em caso de erro */
 
@@ -266,5 +266,102 @@ int saveAndSetTermios(){
 	{
 		perror("tcsetattr");
 		exit(-1);
+	}
+}
+
+
+/* NOT FINISHED */
+int writeCommand(Command command) {
+	unsigned char buf[COMMAND_SIZE];
+
+	buf[0] = FLAG;
+	buf[4] = FLAG;
+
+	switch(command) {
+		case SET:
+		buf[2] = CTRL_SET;
+		break;
+		case DISC:
+		buf[2] = DISC_SET;
+		break;
+		case UA:
+		buf[2] = UA_SET;
+		break;
+		case RR:
+		buf[2] = RR_SET;
+		break;
+		case REJ:
+		buf[2] = REJ_SET;
+		break;
+		default:
+		break;	
+	}
+
+}
+
+typedef enum { START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP } ReceivingState;
+
+
+/* To be finished */
+int receive() {
+	int res;
+	ReceivingState rState = START;
+
+	while((res=read(fd,&ch,1))>0) {
+
+		switch(rState) {
+			case START:
+				if (c == FLAG){
+					ua[rState]=c;
+					rState++;
+				}
+				break;
+			case FLAG_RCV:
+				if (c == ADDR){
+					ua[rState]=c;
+					rState++;
+				}
+				else {
+					if (c==FLAG)
+						rState = FLAG_RCV;
+					else
+						rState = START;
+				}
+				break;
+			case A_RCV:
+				if (c == CTRL_UA) {
+					ua[rState]=c;
+					rState++;
+				}
+				else {
+					if (c==FLAG)
+						rState = FLAG_RCV;
+					else
+						rState = START;
+				}
+				break;
+			case C_RCV:
+				if (c == (ua[1]^ua[2])) {
+					ua[rState]=c;
+					rState++;
+				}		
+				else {
+					if (c==FLAG)
+						rState = FLAG_RCV;
+					else
+						rState = START;
+				}
+				break;
+			case BCC_OK:
+				if (c == FLAG) {
+					ua[rState]=c;
+					rState++;
+				}
+				else
+					rState=0;
+				break;
+			case STOP:
+				return 1;					
+		}
 	}
 }
