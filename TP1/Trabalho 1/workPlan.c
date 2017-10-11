@@ -1,255 +1,208 @@
-
-
 int llwrite(int fd, char * buffer, int length) {
-	int alarmCounter = 0;
-	int written;
+  int alarmCounter = 0;
+  int written;
 
-	while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-		if (alarmCounter == 0 || alarmFlag == 1) {
-			setAlarm();
-				/* escreve I */
-			alarmFlag = 0;
-			alarmCounter++;
-		}
+  while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas */ ) {
+    if (alarmCounter == 0 || alarmFlag == 1) {
+      setAlarm();
+      /* escreve I */
+      alarmFlag = 0;
+      alarmCounter++;
+    }
 
-			/* Recebe resposta
+     Recebe resposta
 
-			if ( RR ) {
+			if (receiveFrame(RR) == 0) {
+				stopAlarm();
+			} else if (receiveFrame(REF) == 0) {
+				stopAlarm();
+			}  
+	}
 
-		stopAlarm();
-	
-			} else if ( REJ ) {
+    if (alarmCounter < NO_TRIES)
+      printf("Connection successfully done!\n");
+    else
+      printf("Connection couldn't be done!\n");
+    break;
 
-		stopAlarm();
-	
-			} */
-	}	
+  /* 
+  codigo do writenoncanonical.c 
 
-	/* Verificar sucesso / insucesso */
+  Escreve I
+  Espera por RR / REJ
+  */
 
-	/* 
-	codigo do writenoncanonical.c 
-
-	Escreve I
-	Espera por RR / REJ
-	*/
-
-	return written;
-	/*	– número de caracteres escritos
-		– valor negativo em caso de erro */
+  return written;
+  /*	– número de caracteres escritos
+  	– valor negativo em caso de erro */
 }
 
 int llread(int fd, char * buffer) {
-	int read;
+  int read;
 
-	while(1) {
-		/* Recebe I */
+  while (1) {
+    /* Recebe I */
 
-		/* Verifica info recebida e escreve RR / REJ */
-	}
+    /* Verifica info recebida e escreve RR / REJ */
+  }
 
-	/*
-	codigo do noncanonical.c
+  /*
+  codigo do noncanonical.c
 
-	Espera por I
-	Escreve RR / REJ
-	*/
+  Espera por I
+  Escreve RR / REJ
+  */
 
-	return read;
-	/*	– comprimento do array
-		(número de caracteres lidos)
-		– valor negativo em caso de erro */
+  return read;
+  /*	– comprimento do array
+  	(número de caracteres lidos)
+  	– valor negativo em caso de erro */
 }
 
 int llclose(int fd) {
-	int alarmCounter = 0;
+  int alarmCounter = 0;
 
-	switch(appL->status) {
-		case TRANSMITTER:
-			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
+  switch (appL - > status) {
+  case TRANSMITTER:
+    while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas */ ) {
 
-		if (alarmCounter == 0 || alarmFlag == 1) {
-			setAlarm();
-			writeCommand(SET);
-			alarmFlag = 0;
-			alarmCounter++;
-		}
+      if (alarmCounter == 0 || alarmFlag == 1) {
+        setAlarm();
+        writeCommand(SET);
+        alarmFlag = 0;
+        alarmCounter++;
+      }
 
-				/* Recebe DISC */
-			writeCommand(UA);
-	}	
+      if (receiveFrame(DISC) == 0)
+        writeCommand(UA); /* Recebe DISC */
+    }
+    stopAlarm();
 
-						/* Recebe DISC */
-						/* Envia UA */
-			}	
-			stopAlarm();
+    /* Verificar sucesso / insucesso */
+    break;
+  case RECEIVER:
+    while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas */ ) {
 
-				/* Verificar sucesso / insucesso */
-		    break; 
-		case RECEIVER:
-			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
+      if (alarmCounter == 0 || alarmFlag == 1) {
+        setAlarm();
+        writeCommand(DISC);
+        alarmFlag = 0;
+        alarmCounter++;
+      }
 
-	if (alarmCounter == 0 || alarmFlag == 1) {
-		setAlarm();
-		writeCommand(SET);
-		alarmFlag = 0;
-		alarmCounter++;
-	}
+      if(receiveFrame(UA) == 0)	/* Recebe UA */
+      	printf("Disconnection successfully done!\n");
+    }
 
-				/* Recebe UA */
+    stopAlarm();
+    
+    if (alarmCounter < NO_TRIES)
+      printf("Connection successfully done!\n");
+    else
+      printf("Connection couldn't be done!\n");
 
-							/* Recebe UA */
-			}	
+    break;
+  }
 
-			stopAlarm();
-						/* Verificar sucesso / insucesso */
-			break;
-			}
+  /*
+  Escreve DISC
+  Recebe DISC
+  Escreve UA
+  */
 
-				/*
-				Escreve DISC
-				Recebe DISC
-				Escreve UA
-				*/
-
-		return 1;
-			/*	– valor positivo em caso de sucesso
-				– valor negativo em caso de erro */
+  return 1;
+  /*	– valor positivo em caso de sucesso
+  	– valor negativo em caso de erro */
 
 }
-
-
-
-/* Not finished AT ALL */
-int saveAndSetTermios(){
-	struct termios oldtio,newtio;		/*	Got to be saved on a global 
-
-	/* save current port settings */
-	if ( tcgetattr(fd,&oldtio) == -1)
-	{ 
-		perror("tcgetattr");
-		exit(-1);
-	}
-
-	bzero(&newtio, sizeof(newtio));
-	newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-	newtio.c_iflag = IGNPAR;
-	newtio.c_oflag = OPOST;
-
-    /* set input mode (non-canonical, no echo,...) */
-	newtio.c_lflag = 0;
-
-	newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-	newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
-
-
-	if (tcflush(fd, TCIFLUSH) == -1)
-	{
-		perror("tcflush");
-		exit(-1);
-	}	
-
-	if (tcsetattr(fd,TCSANOW,&newtio) == -1) 
-	{
-		perror("tcsetattr");
-		exit(-1);
-	}
-}
-
-
-
 
 /* To be finished */
 int receive() {
-	int res;
-	ReceivingrState rrState = START;
+  int res;
+  ReceivingrState rrState = START;
 
-	while((res=read(fd,&ch,1))>0) {
+  while ((res = read(fd, & ch, 1)) > 0) {
 
-		switch(rrState) {
-			case START:
-				if (c == FLAG){
-					ua[rrState]=c;
-					rrState++;
-				}
-				break;
-			case FLAG_RCV:
-				if (c == ADDR){
-					ua[rrState]=c;
-					rrState++;
-				}
-				else {
-					if (c==FLAG)
-						rrState = FLAG_RCV;
-					else
-						rrState = START;
-				}
-				break;
-			case A_RCV:
-				if (c == CTRL_UA) {
-					ua[rrState]=c;
-					rrState++;
-				}
-				else {
-					if (c==FLAG)
-						rrState = FLAG_RCV;
-					else
-						rrState = START;
-				}
-				break;
-			case C_RCV:
-				if (c == (ua[1]^ua[2])) {
-					ua[rrState]=c;
-					rrState++;
-				}		
-				else {
-					if (c==FLAG)
-						rrState = FLAG_RCV;
-					else
-						rrState = START;
-				}
-				break;
-			case BCC_OK:
-				if (c == FLAG) {
-					ua[rrState]=c;
-					rrState++;
-				}
-				else
-					rrState=0;
-				break;
-			case STOP:
-				return 1;					
-		}
-	}
+    switch (rrState) {
+    case START:
+      if (c == FLAG) {
+        ua[rrState] = c;
+        rrState++;
+      }
+      break;
+    case FLAG_RCV:
+      if (c == ADDR) {
+        ua[rrState] = c;
+        rrState++;
+      } else {
+        if (c == FLAG)
+          rrState = FLAG_RCV;
+        else
+          rrState = START;
+      }
+      break;
+    case A_RCV:
+      if (c == CTRL_UA) {
+        ua[rrState] = c;
+        rrState++;
+      } else {
+        if (c == FLAG)
+          rrState = FLAG_RCV;
+        else
+          rrState = START;
+      }
+      break;
+    case C_RCV:
+      if (c == (ua[1] ^ ua[2])) {
+        ua[rrState] = c;
+        rrState++;
+      } else {
+        if (c == FLAG)
+          rrState = FLAG_RCV;
+        else
+          rrState = START;
+      }
+      break;
+    case BCC_OK:
+      if (c == FLAG) {
+        ua[rrState] = c;
+        rrState++;
+      } else
+        rrState = 0;
+      break;
+    case STOP:
+      return 1;
+    }
+  }
 }
 
-int frread(int fd, unsigned char * buf, int maxlen){
-	int n=0;
-	int ch;
+int frread(int fd, unsigned char * buf, int maxlen) {
+  int n = 0;
+  int ch;
 
-	while(1){
-		if((ch=read(fd, buf+n, 1)) <=0){
-			return ch; // error...
-		}
+  while (1) {
+    if ((ch = read(fd, buf + n, 1)) <= 0) {
+      return ch; // error...
+    }
 
-		if(n==0 && buf[n]!=FLAG){
-			continue;
-		}
+    if (n == 0 && buf[n] != FLAG) {
+      continue;
+    }
 
-		if(n==1 && buf[n]==FLAG){
-			continue;
-		}	
+    if (n == 1 && buf[n] == FLAG) {
+      continue;
+    }
 
-		n++;
+    n++;
 
-		if(buf[n-1]!=FLAG && n==maxlen){
-			n=0;
-			continue;
-		}
+    if (buf[n - 1] != FLAG && n == maxlen) {
+      n = 0;
+      continue;
+    }
 
-		if(buf[n-1]==FFLAG && n>2)
-			//processrframe(buf,n);
+    if (buf[n - 1] == FFLAG && n > 2)
+    //processrframe(buf,n);
 
-		return n;
-	}	
+      return n;
+  }
 }

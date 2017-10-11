@@ -13,3 +13,6 @@ extern applicationLayer_t* appL;
 	Initiates an application layer struct
 */
 int applicationLayerInit(int status);
+
+int closeSerialPort();
+int saveAndSetTermios();

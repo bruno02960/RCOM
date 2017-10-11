@@ -5,8 +5,15 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <termios.h>
+#include <strings.h>
+#include <unistd.h>
+
+#define BAUDRATE B38400
 
 applicationLayer_t* appL;
+struct termios oldtio, newtio;
+
 
 int applicationLayerInit(int status) {
 	appL = (applicationLayer_t*) malloc(sizeof(applicationLayer_t));
@@ -17,9 +24,49 @@ int applicationLayerInit(int status) {
 		exit(1);
 	}
 
-	appL->status = status;/* What's the application layer status? */;
+	appL->status = status;	/* What's the application layer status? */;
 
-	printf("Status = %d", appL->status);
+	return 0;
+}
+
+int saveAndSetTermios() {
+	/* save current port settings */
+	if (tcgetattr(appL->fileDescriptor, &oldtio) == -1) {
+    perror("tcgetattr");
+    return 1;
+	}
+
+	bzero(&newtio, sizeof(newtio));
+	newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+	newtio.c_iflag = IGNPAR;
+	newtio.c_oflag = OPOST;
+
+	/* set input mode (non-canonical, no echo,...) */
+	newtio.c_lflag = 0;
+
+	newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
+	newtio.c_cc[VMIN] = 1; /* blocking read until 5 chars received */
+
+	if (tcflush(appL->fileDescriptor, TCIFLUSH) == -1) {
+    perror("tcflush");
+    return 1;
+	}
+
+	if (tcsetattr(appL->fileDescriptor, TCSANOW, & newtio) == -1) {
+    perror("tcsetattr");
+    return 1;
+	}
+
+	return 0;
+}
+
+int closeSerialPort(){
+	if (tcsetattr(appL->fileDescriptor,TCSANOW,&oldtio) == -1) {
+    perror("tcsetattr");
+    return 1;
+	}
+
+	close(appL->fileDescriptor);
 
 	return 0;
 }
