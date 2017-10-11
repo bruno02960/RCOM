@@ -19,4 +19,4 @@ S and U frames
 #define CTRL_RR 0x05 //receiver ready
 #define CTRL_REJ 0x01 //reject
 
-
+#define ESC 0x7D

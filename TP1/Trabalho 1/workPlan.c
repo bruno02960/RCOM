@@ -77,8 +77,6 @@ int llclose(int fd) {
         writeCommand(UA); /* Recebe DISC */
     }
     stopAlarm();
-
-    /* Verificar sucesso / insucesso */
     break;
   case RECEIVER:
     while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas */ ) {
@@ -205,4 +203,47 @@ int frread(int fd, unsigned char * buf, int maxlen) {
 
       return n;
   }
+}
+
+/* Reserve space for function return */
+char* suffing(char* buf) {
+	char* stuffed;
+	unsigned int size = strlen(stuffed);
+
+	stuffed[0] = buf[0];
+
+	int i, j = 1;
+
+	for (i = 1; i < (size - 1); i++, j++) {
+		if(buf[i] == FLAG || buf[i] == ESC_BYTE) {
+			size++;
+			stuffed[j] = ESC_BYTE;
+			j++;
+			stuffed[j] = buf[i] ^ 0x20;
+		}
+		else
+			stuffed[j] = buf[i];
+	}
+
+	stuffed[j] = buf[i];
+
+	return stuffed;
+}
+
+/* Not finished AT ALL */
+char* destuffing(char* buf) {
+	char* destuffed;
+
+	int i, j;
+
+	for (i = 0; i < strlen(buf); i++) {
+		if (buf[i] == ESC_BYTE) {
+			i++;
+			destuffed[j] = buf[i] ^ 0x20;
+		}
+		else
+			destuffed[j] = buf[i];
+	}
+
+	return buf;
 }
