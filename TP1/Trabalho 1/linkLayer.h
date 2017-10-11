@@ -11,6 +11,6 @@ typedef struct {
 
 extern linkLayer_t* linkL;
 
-int linkLayerInit(char* port);
+int linkLayerInit(char* port, int status);
 
 int llopen();

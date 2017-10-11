@@ -20,7 +20,7 @@ typedef enum {
 } ReceivingState;
 
 
-int linkLayerInit(char* port){
+int linkLayerInit(char* port, int status){
 
 	linkL = (linkLayer_t*) malloc(sizeof(linkLayer_t));
 
@@ -37,6 +37,9 @@ int linkLayerInit(char* port){
 
 	// HOW???
 	//linkL->frame[MAX_SIZE];			/*Trama */
+	
+	applicationLayerInit(status);
+	
 	llopen();
 
 	return 0;
@@ -52,7 +55,6 @@ int receiveFrame(Command command) {
 	tcflush(appL->fileDescriptor, TCIFLUSH);
 
 	while(rState!=STOP && alarmFlag!=1) {
-
 		if((res=read(appL->fileDescriptor,&c,1))>0) {
 			switch(rState) {
 				case START:
@@ -203,7 +205,11 @@ int llopen() {
 					alarmCounter++;
 				}
 				
-				receiveFrame(UA); /* Indicar qual se pretende receber ou verificar após ser recebido? */
+				if(receiveFrame(UA) == 0)
+{
+	printf("UA received!\n);
+					break; /* Indicar qual se pretende receber ou verificar após ser recebido? */
+}
 				/* Recebe UA */
 			}
 
@@ -213,7 +219,8 @@ int llopen() {
 		break;
 	case RECEIVER:
 			if( receiveFrame(SET) == 0/* Recebe SET */){
-				writeCommand(UA);	
+				writeCommand(UA);
+				printf("UA sent!\n);	
 		}
 		break;
 }

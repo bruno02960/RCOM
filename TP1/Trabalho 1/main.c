@@ -43,8 +43,7 @@ int main(int argc, char** argv) {
 	strcpy(port, argv[1]);
 	int status = atoi(argv[2]);
 
-	linkLayerInit(port);
-	applicationLayerInit(status);
+	linkLayerInit(port, status);
 
 	return 0;
 }
