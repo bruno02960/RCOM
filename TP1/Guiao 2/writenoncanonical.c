@@ -11,10 +11,7 @@
 #include <stdlib.h>
 
 #define BAUDRATE B38400
-#define MODEMDEVICE "/dev/ttyS1"
-#define _POSIX_SOURCE 1 /* POSIX compliant source */
-#define FALSE 0
-#define TRUE 1
+
 //SET 
 #define FLAG 0x7E
 #define ADDR 0x03
@@ -23,12 +20,32 @@
 
 typedef enum { START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP } stateMachine_t;
 
-//volatile int STOP=FALSE;
-
 int flag = 1, conta = 0;
 stateMachine_t state = START;
 char ua[5];
+int fd;
 
+void setVMIN (int noChars) {
+
+	struct termios oldtio;
+
+	/* save current port settings */
+	if ( tcgetattr(fd,&oldtio) == -1)
+	{ 
+		perror("tcgetattr");
+		exit(-1);
+	}
+
+  	oldtio.c_cc[VMIN]     = 0;   /* blocking read until 5 chars received */
+
+	tcflush(fd, TCIFLUSH);
+
+	if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) 
+	{
+		perror("tcsetattr");
+		exit(-1);
+	}
+}
 
 void atende()
 {
@@ -36,6 +53,8 @@ void atende()
 	conta++;
 
 	printf("Atendeu!\n");
+
+	setVMIN(0);
 }
 
 int writeSet(int fd) {
@@ -127,7 +146,6 @@ int receiveFrame(int fd) {
 
 int main(int argc, char** argv)
 {
-	int fd;
 	struct termios oldtio,newtio;
 
 	if ( (argc < 2) || 
@@ -175,6 +193,8 @@ int main(int argc, char** argv)
   		alarm(3);
   		writeSet(fd);
   		flag = 0;
+
+		setVMIN(1);
   	}
 
   	if(receiveFrame(fd)==0) {
