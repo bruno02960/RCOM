@@ -12,4 +12,6 @@ int applicationLayerInit() {
 	}
 
 	appL->status = /* What's the application layer status? */;
+
+	return 0;
 }

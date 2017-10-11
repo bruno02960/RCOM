@@ -8,33 +8,34 @@ int llopen(int porta, int flag) {
 	int alarmCounter = 0;
 
 	/* Guarda flag para uso futuro */
-	appL.status -> flag;
+	appL->status = flag;
 
 	switch(appL->status) {
 		case TRANSMITTER:
 			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-		if (alarmCounter == 0 || alarmFlag == 1) {
-			setAlarm();
-			writeCommand(SET);
-			alarmFlag = 0;
-			alarmCounter++;
-		}
+				if (alarmCounter == 0 || alarmFlag == 1) {
+					setAlarm();
+					writeCommand(SET);
+					alarmFlag = 0;
+					alarmCounter++;
+				}
 
-				/* Recebe UA */
-	}	
+						/* Recebe UA */
+			}
 
-	stopAlarm();
+			stopAlarm();
 
-			/* Verificar sucesso / insucesso */
-	break;
+			/* Verificar sucesso / insucesso do SET*/
+		break;
 	case RECEIVER:
-			if( /* Recebe SET */)
+			if( /* Recebe SET */){
 				/* Escreve UA */	
-}
-
-return fd;
-	/*	– identificador da ligação de dados
-		– valor negativo em caso de erro */
+		}
+		break;
+	
+	return appL->fileDescriptor;
+		/*	– identificador da ligação de dados
+			– valor negativo em caso de erro */
 }
 
 int llwrite(int fd, char * buffer, int length) {
@@ -42,25 +43,25 @@ int llwrite(int fd, char * buffer, int length) {
 	int written;
 
 	while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-	if (alarmCounter == 0 || alarmFlag == 1) {
-		setAlarm();
-			/* escreve I */
-		alarmFlag = 0;
-		alarmCounter++;
-	}
+		if (alarmCounter == 0 || alarmFlag == 1) {
+			setAlarm();
+				/* escreve I */
+			alarmFlag = 0;
+			alarmCounter++;
+		}
 
-		/* Recebe resposta
+			/* Recebe resposta
 
-		if ( RR ) {
+			if ( RR ) {
 
-	stopAlarm();
+		stopAlarm();
 	
-		} else if ( REJ ) {
+			} else if ( REJ ) {
 
-	stopAlarm();
+		stopAlarm();
 	
-		} */
-}	
+			} */
+	}	
 
 	/* Verificar sucesso / insucesso */
 
@@ -71,7 +72,7 @@ int llwrite(int fd, char * buffer, int length) {
 	Espera por RR / REJ
 	*/
 
-return written;
+	return written;
 	/*	– número de caracteres escritos
 		– valor negativo em caso de erro */
 }
@@ -104,48 +105,46 @@ int llclose(int fd) {
 	switch(appL->status) {
 		case TRANSMITTER:
 			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-		if (alarmCounter == 0 || alarmFlag == 1) {
-			setAlarm();
-					/* escreve SET */
-			alarmFlag = 0;
-			alarmCounter++;
-		}
+				if (alarmCounter == 0 || alarmFlag == 1) {
+					setAlarm();
+							/* escreve SET */
+					alarmFlag = 0;
+					alarmCounter++;
+				}
 
-				/* Recebe DISC */
-				/* Envia UA */
-	}	
+						/* Recebe DISC */
+						/* Envia UA */
+			}	
+			stopAlarm();
 
-	stopAlarm();
-
-			/* Verificar sucesso / insucesso */
-	break;
-	case RECEIVER:
+				/* Verificar sucesso / insucesso */
+		    break; 
+		case RECEIVER:
 			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-	if (alarmCounter == 0 || alarmFlag == 1) {
-		setAlarm();
-					/* escreve SET */
-		alarmFlag = 0;
-		alarmCounter++;
-	}
+				if (alarmCounter == 0 || alarmFlag == 1) {
+					setAlarm();
+								/* escreve SET */
+					alarmFlag = 0;
+					alarmCounter++;
+				}
 
-				/* Recebe UA */
-}	
+							/* Recebe UA */
+			}	
 
-stopAlarm();
+			stopAlarm();
+						/* Verificar sucesso / insucesso */
+			break;
+			}
 
-			/* Verificar sucesso / insucesso */
-break;
-}
+				/*
+				Escreve DISC
+				Recebe DISC
+				Escreve UA
+				*/
 
-	/*
-	Escreve DISC
-	Recebe DISC
-	Escreve UA
-	*/
-
-return 1;
-	/*	– valor positivo em caso de sucesso
-		– valor negativo em caso de erro */
+		return 1;
+			/*	– valor positivo em caso de sucesso
+				– valor negativo em caso de erro */
 
 }
 
@@ -275,28 +274,43 @@ int writeCommand(Command command) {
 	unsigned char buf[COMMAND_SIZE];
 
 	buf[0] = FLAG;
-	buf[4] = FLAG;
+
+	if (appL->status == TRANSMITTER)
+		buf[1] = ADDR_S;
+	else
+		buf[1] = ADDR_R;
 
 	switch(command) {
 		case SET:
-		buf[2] = CTRL_SET;
-		break;
+			buf[2] = CTRL_SET;
+			break;
 		case DISC:
-		buf[2] = DISC_SET;
-		break;
+			buf[2] = DISC_SET;
+			break;
 		case UA:
-		buf[2] = UA_SET;
-		break;
+			buf[2] = UA_SET;
+			break;
 		case RR:
-		buf[2] = RR_SET;
-		break;
+			buf[2] = RR_SET;
+			break;
 		case REJ:
-		buf[2] = REJ_SET;
-		break;
+			buf[2] = REJ_SET;
+			break;
 		default:
 		break;	
 	}
+	buf[3] = buf[1]^buf[2]; //BCC
 
+	buf[4] = FLAG;
+
+	tcflush(appL->fileDescriptor, TCOFLUSH);
+
+	if(write(appL->fileDescriptor,&buf,5)!=sizeof(buf)) {
+		printf("Error on writting!\n");
+		return ERROR;
+	}
+
+	return 0;
 }
 
 typedef enum { START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP } ReceivingState;
