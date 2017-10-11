@@ -1,6 +1,5 @@
 #pragma once
 
-#define ERROR -1
 #define TRANSMITTER 0
 #define RECEIVER 1
 
@@ -19,6 +18,5 @@ S and U frames
 #define CTRL_UA 0x07 //acknowledgement
 #define CTRL_RR 0x05 //receiver ready
 #define CTRL_REJ 0x01 //reject
-
 
 

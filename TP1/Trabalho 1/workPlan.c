@@ -23,6 +23,9 @@ int llopen(int porta, int flag) {
 						/* Recebe UA */
 			}
 
+			receiveFrame(appL->fileDescriptor); /* Indicar qual se pretende receber ou verificar após ser recebido? */
+			/* Recebe UA */
+
 			stopAlarm();
 
 			/* Verificar sucesso / insucesso do SET*/
@@ -105,12 +108,17 @@ int llclose(int fd) {
 	switch(appL->status) {
 		case TRANSMITTER:
 			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-				if (alarmCounter == 0 || alarmFlag == 1) {
-					setAlarm();
-							/* escreve SET */
-					alarmFlag = 0;
-					alarmCounter++;
-				}
+
+		if (alarmCounter == 0 || alarmFlag == 1) {
+			setAlarm();
+			writeCommand(SET);
+			alarmFlag = 0;
+			alarmCounter++;
+		}
+
+				/* Recebe DISC */
+			writeCommand(UA);
+	}	
 
 						/* Recebe DISC */
 						/* Envia UA */
@@ -121,12 +129,15 @@ int llclose(int fd) {
 		    break; 
 		case RECEIVER:
 			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-				if (alarmCounter == 0 || alarmFlag == 1) {
-					setAlarm();
-								/* escreve SET */
-					alarmFlag = 0;
-					alarmCounter++;
-				}
+
+	if (alarmCounter == 0 || alarmFlag == 1) {
+		setAlarm();
+		writeCommand(SET);
+		alarmFlag = 0;
+		alarmCounter++;
+	}
+
+				/* Recebe UA */
 
 							/* Recebe UA */
 			}	
@@ -297,7 +308,7 @@ int writeCommand(Command command) {
 			buf[2] = REJ_SET;
 			break;
 		default:
-		break;	
+			break;	
 	}
 	buf[3] = buf[1]^buf[2]; //BCC
 
@@ -310,7 +321,10 @@ int writeCommand(Command command) {
 		return ERROR;
 	}
 
+	/* What's the adress byte? */
+	/* What's RR & REJ BCC ? */
 	return 0;
+
 }
 
 typedef enum { START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP } ReceivingState;
@@ -378,4 +392,36 @@ int receive() {
 				return 1;					
 		}
 	}
+}
+
+int frread(int fd, unsigned char * buf, int maxlen){
+	int n=0;
+	int ch;
+
+	while(1){
+		if((ch=read(fd, buf+n, 1)) <=0){
+			return ch; // error...
+		}
+
+		if(n==0 && buf[n]!=FLAG){
+			continue;
+		}
+
+		if(n==1 && buf[n]==FLAG){
+			continue;
+		}	
+
+		n++;
+
+		if(buf[n-1]!=FLAG && n==maxlen){
+			n=0;
+			continue;
+		}
+
+		if(buf[n-1]==FFLAG && n>2){
+			//processrframe(buf,n);
+
+		return n;
+		{
+	}	
 }
