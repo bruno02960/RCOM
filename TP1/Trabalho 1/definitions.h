@@ -1,6 +1,5 @@
 #pragma once
 
-#define ERROR -1
 #define TRANSMITTER 0
 #define RECEIVER 1
 
