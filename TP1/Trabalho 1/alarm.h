@@ -1,6 +1,6 @@
 #pragma once
 
-extern int flag, conta;
+extern int alarmFlag;
 
 void handerALRM();
 

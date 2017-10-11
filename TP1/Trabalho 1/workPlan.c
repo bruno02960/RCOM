@@ -1,45 +1,4 @@
-#include "alarm.h"
 
-typedef enum {
-	SET, DISC, UA, RR, REJ
-} Command
-
-int llopen(int porta, int flag) {
-	int alarmCounter = 0;
-
-	/* Guarda flag para uso futuro */
-	appL->status = flag;
-
-	switch(appL->status) {
-		case TRANSMITTER:
-			while(alarmCounter < 3 /* TODO: Substituir nr. tentativas */) {
-				if (alarmCounter == 0 || alarmFlag == 1) {
-					setAlarm();
-					writeCommand(SET);
-					alarmFlag = 0;
-					alarmCounter++;
-				}
-
-						/* Recebe UA */
-			}
-
-			receiveFrame(appL->fileDescriptor); /* Indicar qual se pretende receber ou verificar após ser recebido? */
-			/* Recebe UA */
-
-			stopAlarm();
-
-			/* Verificar sucesso / insucesso do SET*/
-		break;
-	case RECEIVER:
-			if( /* Recebe SET */){
-				/* Escreve UA */	
-		}
-		break;
-	
-	return appL->fileDescriptor;
-		/*	– identificador da ligação de dados
-			– valor negativo em caso de erro */
-}
 
 int llwrite(int fd, char * buffer, int length) {
 	int alarmCounter = 0;
@@ -159,89 +118,7 @@ int llclose(int fd) {
 
 }
 
-/* Not finished AT ALL */
-int receiveFrame(int fd) {
-	char c;
-	int res;
 
-	tcflush(*fd, TCIFLUSH);
-
-	while(state!=STOP && flag!=1) {
-
-		if((res=read(*fd,&ch,1))>0) {
-			switch(state) {
-				case START:
-				if (c == FLAG){
-					ua[state]=c;
-					state++;
-				}
-				break;
-				case FLAG_RCV:
-				if (c == ADDR){
-					ua[state]=c;
-					state++;
-				}
-				else {
-					if (c==FLAG)
-						state = FLAG_RCV;
-					else
-						state = START;
-				}
-				break;
-				case A_RCV:
-				if (c == CTRL) {
-					ua[state]=c;
-					state++;
-				}
-				else {
-					if (c==FLAG)
-						state = FLAG_RCV;
-					else
-						state = START;
-				}
-				break;
-				case C_RCV:
-				if (c == (ua[1]^ua[2])) {
-					ua[state]=c;
-					state++;
-				}		
-				else {
-					if (c==FLAG)
-						state = FLAG_RCV;
-					else
-						state = START;
-				}
-				break;
-				case BCC_OK:
-				if (c == FLAG) {
-					ua[state]=c;
-					state++;
-				}
-				else
-					state=0;
-				break;					
-			}
-		}
-	}
-
-	if (flag == 1)
-		return 1;
-	else
-		return 0;
-}
-
-/* Not finished AT ALL */
-int writeSet(int fd) {
-	tcflush(*fd, TCOFLUSH);
-	unsigned char set[]={FLAG, ADDR, CTRL, ADDR^CTRL, FLAG},
-	
-	if(write(*fd,&set,5)!=sizeof(set)) {
-		printf("Error on writting!\n");
-		return ERROR;
-	}
-
-	return 0;
-}
 
 /* Not finished AT ALL */
 int saveAndSetTermios(){
@@ -280,113 +157,65 @@ int saveAndSetTermios(){
 }
 
 
-/* NOT FINISHED */
-int writeCommand(Command command) {
-	unsigned char buf[COMMAND_SIZE];
-
-	buf[0] = FLAG;
-
-	if (appL->status == TRANSMITTER)
-		buf[1] = ADDR_S;
-	else
-		buf[1] = ADDR_R;
-
-	switch(command) {
-		case SET:
-			buf[2] = CTRL_SET;
-			break;
-		case DISC:
-			buf[2] = DISC_SET;
-			break;
-		case UA:
-			buf[2] = UA_SET;
-			break;
-		case RR:
-			buf[2] = RR_SET;
-			break;
-		case REJ:
-			buf[2] = REJ_SET;
-			break;
-		default:
-			break;	
-	}
-	buf[3] = buf[1]^buf[2]; //BCC
-
-	buf[4] = FLAG;
-
-	tcflush(appL->fileDescriptor, TCOFLUSH);
-
-	if(write(appL->fileDescriptor,&buf,5)!=sizeof(buf)) {
-		printf("Error on writting!\n");
-		return ERROR;
-	}
-
-	/* What's the adress byte? */
-	/* What's RR & REJ BCC ? */
-	return 0;
-
-}
-
-typedef enum { START, FLAG_RCV, A_RCV, C_RCV, BCC_OK, STOP } ReceivingState;
 
 
 /* To be finished */
 int receive() {
 	int res;
-	ReceivingState rState = START;
+	ReceivingrState rrState = START;
 
 	while((res=read(fd,&ch,1))>0) {
 
-		switch(rState) {
+		switch(rrState) {
 			case START:
 				if (c == FLAG){
-					ua[rState]=c;
-					rState++;
+					ua[rrState]=c;
+					rrState++;
 				}
 				break;
 			case FLAG_RCV:
 				if (c == ADDR){
-					ua[rState]=c;
-					rState++;
+					ua[rrState]=c;
+					rrState++;
 				}
 				else {
 					if (c==FLAG)
-						rState = FLAG_RCV;
+						rrState = FLAG_RCV;
 					else
-						rState = START;
+						rrState = START;
 				}
 				break;
 			case A_RCV:
 				if (c == CTRL_UA) {
-					ua[rState]=c;
-					rState++;
+					ua[rrState]=c;
+					rrState++;
 				}
 				else {
 					if (c==FLAG)
-						rState = FLAG_RCV;
+						rrState = FLAG_RCV;
 					else
-						rState = START;
+						rrState = START;
 				}
 				break;
 			case C_RCV:
 				if (c == (ua[1]^ua[2])) {
-					ua[rState]=c;
-					rState++;
+					ua[rrState]=c;
+					rrState++;
 				}		
 				else {
 					if (c==FLAG)
-						rState = FLAG_RCV;
+						rrState = FLAG_RCV;
 					else
-						rState = START;
+						rrState = START;
 				}
 				break;
 			case BCC_OK:
 				if (c == FLAG) {
-					ua[rState]=c;
-					rState++;
+					ua[rrState]=c;
+					rrState++;
 				}
 				else
-					rState=0;
+					rrState=0;
 				break;
 			case STOP:
 				return 1;					
@@ -418,10 +247,9 @@ int frread(int fd, unsigned char * buf, int maxlen){
 			continue;
 		}
 
-		if(buf[n-1]==FFLAG && n>2){
+		if(buf[n-1]==FFLAG && n>2)
 			//processrframe(buf,n);
 
 		return n;
-		{
 	}	
 }

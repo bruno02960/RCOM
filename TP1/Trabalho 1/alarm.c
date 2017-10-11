@@ -1,6 +1,10 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdio.h>
+#include <termios.h>
+#include <stdlib.h>
+#include "applicationLayer.h"
+#include "linkLayer.h"
 
 int alarmFlag = 0;
 
@@ -9,7 +13,7 @@ void setVMIN (int noChars) {
 	struct termios oldtio;
 
 	/* save current port settings */
-	if ( tcgetattr(fd,&oldtio) == -1)
+	if ( tcgetattr(appL->fileDescriptor,&oldtio) == -1)
 	{ 
 		perror("tcgetattr");
 		exit(-1);
@@ -17,9 +21,9 @@ void setVMIN (int noChars) {
 
   	oldtio.c_cc[VMIN]     = 0;   /* blocking read until 5 chars received */
 
-	tcflush(fd, TCIFLUSH);
+	tcflush(appL->fileDescriptor, TCIFLUSH);
 
-	if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) 
+	if ( tcsetattr(appL->fileDescriptor,TCSANOW,&oldtio) == -1) 
 	{
 		perror("tcsetattr");
 		exit(-1);
