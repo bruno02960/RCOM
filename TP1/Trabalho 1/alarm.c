@@ -40,12 +40,7 @@ void alarmHandler()
 
 
 void setAlarm() {
-	struct sigaction new;
-
-	/* Set up the structure to specify the new action. */
-	new.sa_handler = alarmHandler;
-	sigemptyset (&new.sa_mask);
-	new.sa_flags = 0;
+	(void) signal(SIGALRM, alarmHandler);
 
 	alarmFlag = 0;
 
@@ -55,12 +50,7 @@ void setAlarm() {
 }
 
 void stopAlarm() {
-	struct sigaction new;
-
-	/* Set up the structure to specify the new action. */
-	new.sa_handler = NULL;
-	sigemptyset (&new.sa_mask);
-	new.sa_flags = 0;
+	(void) signal(SIGALRM, NULL);
 
 	alarm(0);
 }

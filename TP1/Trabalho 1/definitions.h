@@ -5,6 +5,10 @@
 
 #define COMMAND_SIZE 5
 
+#define DATA_BYTE 1
+#define START_BYTE 2
+#define END_BYTE 3
+
 /**
 S and U frames
 */
@@ -19,4 +23,7 @@ S and U frames
 #define CTRL_RR 0x05 //receiver ready
 #define CTRL_REJ 0x01 //reject
 
-#define ESC 0x7D
+#define ESC_BYTE 0x7D
+
+#define FILE_SIZE 0
+#define FILE_NAME 1

@@ -9,9 +9,8 @@
 #include <strings.h>
 #include <unistd.h>
 
-#define BAUDRATE B38400
-
 applicationLayer_t* appL;
+transferFile_t* traF;
 struct termios oldtio, newtio;
 
 
@@ -25,6 +24,8 @@ int applicationLayerInit(int status) {
 	}
 
 	appL->status = status;	/* What's the application layer status? */;
+
+	openFile();
 
 	return 0;
 }
@@ -69,4 +70,30 @@ int closeSerialPort(){
 	close(appL->fileDescriptor);
 
 	return 0;
+}
+
+int transferFileInit(){
+	struct stat st;
+
+	traF = (transferFile_t*) malloc(sizeof(transferFile_t));
+
+	if (appL->status == TRANSMITTER)
+		if (!(traF->file = fopen(FILE_PATH, "rb")){
+			printf("Unable to open file!\n");
+			exit(1);
+		}
+	else
+		if (!(traF->file = fopen(FILE_PATH, "wb")){
+			printf("Unable to open file!\n");
+			exit(1);
+		}
+
+	if(stat(FILE_PATH,&st)==0)
+		traF->fileSize = st.st_size;
+	else {
+		printf("Unable to get file size!\n");
+		exit(1);
+	}
+
+	return 0;	
 }

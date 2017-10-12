@@ -9,6 +9,13 @@ typedef struct {
 
 extern applicationLayer_t* appL;
 
+typedef struct {
+	FILE* file;
+	int fileSize;
+} transferFile_t;
+
+extern transferFile_t* traF;
+
 /**
 	Initiates an application layer struct
 */

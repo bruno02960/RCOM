@@ -36,13 +36,10 @@ int linkLayerInit(char * port, int status) {
 
   strcpy(linkL->port, port);
 
-  linkL->timeout = 3;
-
-  printf("%s", linkL->port);
-  //linkL->baudRate = /*Velocidade de transmissão*/
-  //	linkL->sequenceNumber = 0;	/*Número de sequência da trama: 0, 1*/
-  //	linkL->timeout = /*Valor do temporizador: 1 s*/
-  //	linkL->numTransmissions = /*Número de tentativas em caso de falha*/
+  linkL->timeout = TIMEOUT;
+  linkL->baudRate = BAUDRATE;                   /*Velocidade de transmissão*/
+  //	linkL->sequenceNumber = 0;                /*Número de sequência da trama: 0, 1*/
+  linkL->numTransmissions = NUM_TRANSMISSIONS   /*Número de tentativas em caso de falha*/
 
   // HOW???
   //linkL->frame[MAX_SIZE];			/*Trama */
@@ -53,109 +50,107 @@ int linkLayerInit(char * port, int status) {
   
   llopen();
 
+  int fileSize = openFile();
+
   closeSerialPort();
 
   return 0;
 }
 
-/* Not finished AT ALL */
 char* receiveFrame() {
   char c;
   int res;
   char *ua = malloc(5);
   ReceivingState rState;
 
-  tcflush(appL->fileDescriptor, TCIFLUSH);
-
   while (rState != STOP && alarmFlag != 1) {
-		res = read(appL->fileDescriptor, & c, 1);
+    res = read(appL->fileDescriptor, & c, 1);
 
     if (res > 0) {
-      	switch(rState) {
-		case START:
-			if (c == FLAG){
-				ua[rState]=c;
-				rState++;
-			}
-			break;
-		case FLAG_RCV:
-			if (c == ADDR_S){
-				ua[rState]=c;
-				rState++;
-			}
-			else {
-				if (c==FLAG)
-					rState = FLAG_RCV;
-				else
-					rState = START;
-			}
-			break;
-		case A_RCV:
-			if (c != FLAG) {
-			ua[rState]=c;
-			rState++;
-			}
-			else
-				if (c==FLAG)
-					rState = FLAG_RCV;
-			break;
-		case C_RCV:
-			if (c == (ua[1]^ua[2])) {
-				ua[rState]=c;
-				rState++;
-			}		
-			else {
-				if (c==FLAG)
-					rState = FLAG_RCV;
-				else
-					rState = START;
-			}
-			break;
-		case BCC_OK:
-			if (c == FLAG) {
-				ua[rState]=c;
-				rState++;
-			}
-			else
-				rState=0;
-			break;
-		case STOP:
-			return ua;					
-		}
+     switch(rState) {
+      case START:
+        if (c == FLAG){
+          ua[rState]=c;
+          rState++;
+        }
+      break;
+      case FLAG_RCV:
+        if (c == ADDR_S){
+          ua[rState]=c;
+          rState++;
+        }
+        else {
+          if (c==FLAG)
+           rState = FLAG_RCV;
+         else
+           rState = START;
+       }
+     break;
+     case A_RCV:
+       if (c != FLAG) {
+         ua[rState]=c;
+         rState++;
+       }
+       else
+        if (c==FLAG)
+         rState = FLAG_RCV;
+     break;
+     case C_RCV:
+       if (c == (ua[1]^ua[2])) {
+        ua[rState]=c;
+        rState++;
+      }		
+      else {
+        if (c==FLAG)
+         rState = FLAG_RCV;
+       else
+         rState = START;
+       }
+     break;
+     case BCC_OK:
+       if (c == FLAG) {
+        ua[rState]=c;
+        rState++;
+      }
+      else
+        rState=0;
+      break;
+      case STOP:
+        return ua;					
     }
   }
-
-  return ua;
 }
 
-/* NOT FINISHED */
+return ua;
+}
+
 int writeCommand(Command command) {
   unsigned char buf[COMMAND_SIZE];
 
   buf[0] = FLAG;
 
-  if (appL->status == TRANSMITTER)
+//  if (appL->status == TRANSMITTER)
     buf[1] = ADDR_S;
-  else
-    buf[1] = ADDR_R;
+/*  else
+    buf[1] = ADDR_R;*/
 
   switch (command) {
-  case SET:
+    case SET:
     buf[2] = CTRL_SET;
     break;
-  case DISC:
+    case DISC:
     buf[2] = CTRL_DISC;
     break;
-  case UA:
+    case UA:
     buf[2] = CTRL_UA;
     break;
-  case RR:
+    case RR:
     buf[2] = CTRL_RR;
     break;
-  case REJ:
+    case REJ:
     buf[2] = CTRL_REJ;
     break;
-  default:
+    default:
     break;
   }
   buf[3] = buf[1] ^ buf[2]; //BCC
@@ -180,43 +175,45 @@ int llopen() {
 	char* received;
 
   switch (appL->status) {
-  case TRANSMITTER:
+    case TRANSMITTER:
     while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas */ ) {
-      if (alarmCounter == 0 || alarmFlag == 1) {
-        setAlarm();
-        writeCommand(SET);
-        alarmFlag = 0;
-        alarmCounter++;
-      }
+    if (alarmCounter == 0 || alarmFlag == 1) {
+      setAlarm();
+      writeCommand(SET);
+      alarmFlag = 0;
+      alarmCounter++;
+    }
 
-      if (receiveFrame(UA) == 0) {
-        printf("UA received!\n");
+  received=receiveFrame();
+
+    if (received[2] == CTRL_UA) {
+      printf("UA received!\n");
         break; /* Indicar qual se pretende receber ou verificar após ser recebido? */
-      }
+    }
       /* Recebe UA */
-    }
-
-    stopAlarm();
-
-    if (alarmCounter < NO_TRIES)
-      printf("Connection successfully done!\n");
-    else
-      printf("Connection couldn't be done!\n");
-    break;
-  case RECEIVER:
-
-	received=receiveFrame();
-
-    if (received[2] == CTRL_SET /* Recebe SET */ ) {
-      writeCommand(UA);
-      printf("Connection successfully done!\n");
-    }
-	else
-      printf("Connection couldn't be done!\n");
-    break;
   }
 
-  return appL->fileDescriptor;
+  stopAlarm();
+
+  if (alarmCounter < NO_TRIES)
+    printf("Connection successfully done!\n");
+  else
+    printf("Connection couldn't be done!\n");
+  break;
+  case RECEIVER:
+
+  received=receiveFrame();
+
+    if (received[2] == CTRL_SET /* Recebe SET */ ) {
+  writeCommand(UA);
+  printf("Connection successfully done!\n");
+}
+else
+  printf("Connection couldn't be done!\n");
+break;
+}
+
+return appL->fileDescriptor;
   /*	– identificador da ligação de dados
   	– valor negativo em caso de erro */
 }
