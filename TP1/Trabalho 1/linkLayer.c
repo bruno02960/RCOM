@@ -59,100 +59,73 @@ int linkLayerInit(char * port, int status) {
 }
 
 /* Not finished AT ALL */
-int receiveFrame(Command command) {
+char* receiveFrame() {
   char c;
   int res;
-  char ua[5];
+  char *ua = malloc(5);
   ReceivingState rState;
 
   tcflush(appL->fileDescriptor, TCIFLUSH);
 
   while (rState != STOP && alarmFlag != 1) {
-    if ((res = read(appL->fileDescriptor, & c, 1)) > 0) {
-      switch (rState) {
-      case START:
-        if (c == FLAG) {
-          ua[rState] = c;
-          rState++;
-        }
-        break;
-      case FLAG_RCV:
-        if (c == ADDR_S || c == ADDR_R) {
-          ua[rState] = c;
-          rState++;
-        } else {
-          if (c == FLAG)
-            rState = FLAG_RCV;
-          else
-            rState = START;
-        }
-        break;
-      case A_RCV:
-        switch (command) {
-        case SET:
-          if (c == CTRL_SET) { /* Verifies all the possible CTRL? */
-            ua[rState] = c;
-            rState++;
-          }
-          break;
-        case DISC:
-          if (c == CTRL_DISC) { /* Verifies all the possible CTRL? */
-            ua[rState] = c;
-            rState++;
-          }
-          break;
-        case UA:
-          if (c == CTRL_UA) { /* Verifies all the possible CTRL? */
-            ua[rState] = c;
-            rState++;
-          }
-          break;
-        case RR:
-          if (c == CTRL_RR) { /* Verifies all the possible CTRL? */
-            ua[rState] = c;
-            rState++;
-          }
-          break;
-        case REJ:
-          if (c == CTRL_RR) { /* Verifies all the possible CTRL? */
-            ua[rState] = c;
-            rState++;
-          }
-          break;
-        }
-        if (c == FLAG)
-          rState = FLAG_RCV;
-        else
-          rState = START;
-        break;
-      case C_RCV:
-        if (c == (ua[1] ^ ua[2])) {
-          ua[rState] = c;
-          rState++;
-        } else {
-          if (c == FLAG)
-            rState = FLAG_RCV;
-          else
-            rState = START;
-        }
-        break;
-      case BCC_OK:
-        if (c == FLAG) {
-          ua[rState] = c;
-          rState++;
-        } else
-          rState = 0;
-        break;
-      case STOP:
-        break;
-      }
+		res = read(appL->fileDescriptor, & c, 1);
+
+    if (res > 0) {
+      	switch(rState) {
+		case START:
+			if (c == FLAG){
+				ua[rState]=c;
+				rState++;
+			}
+			break;
+		case FLAG_RCV:
+			if (c == ADDR_S){
+				ua[rState]=c;
+				rState++;
+			}
+			else {
+				if (c==FLAG)
+					rState = FLAG_RCV;
+				else
+					rState = START;
+			}
+			break;
+		case A_RCV:
+			if (c != FLAG) {
+			ua[rState]=c;
+			rState++;
+			}
+			else
+				if (c==FLAG)
+					rState = FLAG_RCV;
+			break;
+		case C_RCV:
+			if (c == (ua[1]^ua[2])) {
+				ua[rState]=c;
+				rState++;
+			}		
+			else {
+				if (c==FLAG)
+					rState = FLAG_RCV;
+				else
+					rState = START;
+			}
+			break;
+		case BCC_OK:
+			if (c == FLAG) {
+				ua[rState]=c;
+				rState++;
+			}
+			else
+				rState=0;
+			break;
+		case STOP:
+			return ua;					
+		}
     }
   }
 
-  if (alarmFlag == 1)
-    return 1;
-  else
-    return 0;
+  return ua;
 }
 
 /* NOT FINISHED */
@@ -203,7 +176,8 @@ int writeCommand(Command command) {
 }
 
 int llopen() {
-  int alarmCounter = 0;
+	int alarmCounter = 0;
+	char* received;
 
   switch (appL->status) {
   case TRANSMITTER:
@@ -230,10 +204,15 @@ int llopen() {
       printf("Connection couldn't be done!\n");
     break;
   case RECEIVER:
-    if (receiveFrame(SET) == 0 /* Recebe SET */ ) {
+
+	received=receiveFrame();
+
+    if (received[2] == CTRL_SET /* Recebe SET */ ) {
       writeCommand(UA);
       printf("Connection successfully done!\n");
     }
+	else
+      printf("Connection couldn't be done!\n");
     break;
   }
 
