@@ -47,10 +47,6 @@ int llwrite(int fd, char * buffer, int length) {
     – valor negativo em caso de erro */
 }
 
-
-
-
-
 int llread(char ** buffer) {
   int read, disconnect, fSize, dataSize;
   char * frame;
@@ -308,19 +304,113 @@ int sendFile() {
     seqNo++;
   }
 
+  if(fclose(traF->file) < 0) {
+    printf("Error on closing file!\n");
+    exit(1);
+  }
+
   /* Handle possible error - In case of success*/
   writeControlPacket(CTRL_END);
 
   return 0;
 }
 
-int receiveControlPacket() {
+int receiveControlPacket(int controlField, int* noBytes, char** filePath) {
+  unsigned char* controlPacket;
 
+  /* Handle possible errors */
+  llread(&controlPacket);
+
+  if((controlPacket[0] - '0') != controlField) {
+    printf("Unexpected control field!\n");
+    exit(1);
+  }
+
+  if((controlPacket[1] - '0') != FILE_SIZE) {
+    printf("Unexpected parameter!\n");
+    exit(1);
+  }
+
+  int lengthSize = (controlPacket[2] - '0');
+  int i, valueIndex = 3;
+  char fileSize[STR_SIZE];
+
+  for (i = 0; i < lengthSize; i++)
+    fileSize[i] = controlPacket[valueIndex++];
+
+  fileSize[valueIndex - 3] = '\0';
+  (*noBytes) = atoi(fileSize);
+
+  if((controlPacket[valueIndex++] - '0') != FILE_NAME)
+    printf("Unexpected parameter!\n");
+
+  int lengthPath = (controlPacket[valueIndex++] - '0');
+  int path[STR_SIZE];
+
+  for (i = 0; i < lengthPath; i++)
+    path[i] = controlPacket[valueIndex++];
+
+  path[i] = '\0';
+  strcpy((*filePath), path);
+
+  return 0;
 }
 
-int receiveDataPacket() {
-  
+int receiveDataPacket(unsigned char ** buffer, int sequenceNumber) {
+  unsigned char* dataPacket;
+  int read;
+
+  /* Handle possible errors */
+  llread(&dataPacket);
+
+  int controlField = dataPacket[0] - '0';
+  int seqNo = dataPacket[1] - '0';
+
+  if(controlField != DATA_BYTE) {
+    printf("Unexpected control field!\n");
+    exit(1);
+  }
+
+  if(seqNo != sequenceNumber) {
+    printf("Unexpected sequence number!\n");
+    exit(1);
+  }
+
+  int l2 = controlPacket[2], l1 = controlPacket[3];
+  read = 256 * l2 - l1;
+
+  memcpy((*buffer), &controlPacket[4], read);
+  free(dataPacket);
+
+  return read;
 }
 
 int receiveFile() {
+  int fileSize;
+
+  /* Handle errors */
+  receiveControlPacket(START_BYTE, &fileSize, FILE_PATH);
+
+  int read, noBytes, seqNo;
+  unsigned char * buffer = malloc(PACKET_SIZE * sizeof(char));
+
+  while(noBytes < fileSize) {
+    if((read = receiveDataPacket(&buffer, seqNo % 255))<0)
+      exit(1);
+
+    noBytes += read;
+
+    fwrite(buffer, sizeof(char), read, traF->file);
+    seqNo++;
+  }
+
+  if(fclose(traF->file) < 0) {
+    printf("Error on closing file!\n");
+    exit(1);
+  }
+
+  /* Handle errors */
+  receiveControlPacket(END_BYTE, &fileSize, FILE_PATH);
+
+  return 0;
 }

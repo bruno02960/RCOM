@@ -9,8 +9,36 @@ typedef struct {
 	char frame[5];			/*Trama*/
 } linkLayer_t;
 
+typedef enum {
+    COMMAND,
+    DATA
+}
+FrameType;
+
+typedef enum {
+    RESP_RR,
+    RESP_REJ
+}
+FrameResponse;
+
+typedef enum {
+    SET,
+    DISC,
+    UA,
+    RR,
+    REJ
+}
+Command;
+
 extern linkLayer_t* linkL;
 
 int linkLayerInit(char* port, int status);
+char* destuffing(char* buf);
+char* stuffing(char* buf);
+int sendFile();
+int receiveFile();
 
 int llopen();
+int llwrite(unsigned char * buffer, int length);
+int llread(unsigned char ** buffer);
+int llclose();

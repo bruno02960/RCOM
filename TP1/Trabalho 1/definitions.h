@@ -31,3 +31,7 @@ S and U frames
 
 #define FILE_SIZE 0
 #define FILE_NAME 1
+
+#define STR_SIZE 128
+
+#define BIT(n) (0x01 << n)

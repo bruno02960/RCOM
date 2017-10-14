@@ -1,5 +1,8 @@
 #include "applicationLayer.h"
 #include "linkLayer.h"
+#include "configs.h"
+#include "definitions.h"
+#include "alarm.h"
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -8,11 +11,12 @@
 #include <termios.h>
 #include <strings.h>
 #include <unistd.h>
+#include <string.h>
 
 applicationLayer_t* appL;
 transferFile_t* traF;
 struct termios oldtio, newtio;
-
+char* FILE_PATH="./file";
 
 int applicationLayerInit(int status) {
 	appL = (applicationLayer_t*) malloc(sizeof(applicationLayer_t));
@@ -75,32 +79,62 @@ int closeSerialPort(){
 int transferFileInit() {
 	struct stat st;
 
-	traF = (transferFile_t*) malloc(sizeof(transferFile_t));
+    traF = (transferFile_t*) malloc(sizeof(transferFile_t));
 
-	if (appL->status == TRANSMITTER)
-		if (!(traF->file = fopen(FILE_PATH, "rb")){
-			printf("Unable to open file!\n");
-			exit(1);
-		}
-	else
-		if (!(traF->file = fopen(FILE_PATH, "wb")){
-			printf("Unable to open file!\n");
-			exit(1);
-		}
+    if (appL->status == TRANSMITTER) {
+        if (!(traF->file = fopen(FILE_PATH, "rb"))) {
+        printf("Unable to open file!\n");
+            exit(1);
+        }
+        else if (!(traF->file = fopen(FILE_PATH, "wb"))) {
+        printf("Unable to open file!\n");
+            exit(1);
+        }
+    }
 
-	if(stat(FILE_PATH,&st)==0)
-		traF->fileSize = st.st_size;
-	else {
-		printf("Unable to get file size!\n");
-		exit(1);
-	}
+    if(stat(FILE_PATH,&st)==0)
+    	traF->fileSize = st.st_size;
+    else
+    {
+        printf("Unable to get file size!\n");
+        exit(1);
+     }
 
-	return 0;	
+    return 0;
 }
 
-int transferFileClose() {
+void transferFileClose() {
 	if(fclose(traF->file) < 0) {
 		printf("Unable to close transfer file!\n");
 		exit(1);
 	}
+}
+
+int writeDataFrame(unsigned char* data, unsigned int length) {
+    char *frame = malloc(1024);
+    int size = length + DATA_SIZE;
+    unsigned char bcc2;
+    int dataInd, i;
+
+    frame[0] = FLAG;
+    frame[1] = ADDR_S;
+    frame[2] = linkL->sequenceNumber << 5;
+    frame[3] = frame[1] ^ frame[2];
+    memcpy(&frame[4], data, size);
+
+    for(i = 0; i < size; i++) {
+        bcc2 ^= data[dataInd++];
+    }
+
+    frame[4 + size] = bcc2;
+    frame[5 + size] = FLAG;
+
+    frame = stuffing(frame);
+
+    if(write(appL->fileDescriptor, frame, size) != size) {
+    	printf("Error on writing data frame!\n");
+    	exit(1);
+    }
+
+    return 0;
 }
