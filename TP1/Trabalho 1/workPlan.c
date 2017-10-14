@@ -4,6 +4,7 @@ int llwrite(int fd, char * buffer, int length) {
   int alarmCounter = 0;
   int written;
   char * received;
+  int frType;
 
   while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas*/){
     if (alarmCounter == 0 || alarmFlag == 1) {
@@ -18,7 +19,7 @@ int llwrite(int fd, char * buffer, int length) {
 
     // Recebe resposta
 
-    received=receiveFrame();
+    received=receiveFrame(&frType, NULL, NULL);
 
    if (received[2] == CTRL_RR) {
        stopAlarm();
@@ -50,10 +51,39 @@ int llwrite(int fd, char * buffer, int length) {
 
 
 
-int llread(int fd, char * buffer) {
-  int read;
+int llread(char ** buffer) {
+  int read, disconnect, fSize, dataSize;
+  char * frame;
+  FrameType frType;
+  FrameResponse fResp;
 
-  while (1) {
+  while (!disconnect) {
+    frame = receiveFrame(&frType, &fResp. &fSize);
+
+    switch(frType) {
+      case COMMAND:
+        if(frame[2] == CTRL_DISC)
+          disconnect = 1;
+        break;
+      case DATA:
+        if(fResp == RR && ((frame[2]>>5) & BIT(0)) == linkL->sequenceNumber) {
+          linkL->sequenceNumber = !linkL->sequenceNumber;
+          dataSize = fSize - DATA_SIZE;
+          *buffer = malloc(dataSize);
+          memcpy(*buffer, &frame[4], dataSize);
+          disconnect = 1;
+        } 
+        else
+          if (fResp == REJ) {
+            linkL->sequenceNumber = ((frame[2]>>5) & BIT(0));
+          }
+
+          sendCommand(fResp);
+      default:
+        exit(1);   
+    }
+
+    return 0;
     /* Recebe I */
 
     /* Verifica info recebida e escreve RR / REJ */
@@ -248,34 +278,6 @@ void writeControlPacket(int controlField) {
   /* TODO: Chama llwrite, lidando com os erros */
 }
 
-void writeControlPacket(int controlField) {
-  char fileSize[14];  /* 10.7KB = 10 700B | log2(10 700)~=14 */
-  sprintf(fileSize, "%d", traF->fileSize);
-
-  int ctrlPkSize = 5 + strlen(fileSize) + strlen(FILE_PATH); /* 5 bytes
-  from C, T1, L1, T2 and L2 */
-
-  unsigned char controlPacket[ctrlPkSize];
-
-  controlPacket[0] = controlField + '0';
-  controlPacket[1] = FILE_SIZE + '0';
-  controlPacket[2] = strlen(fileSize) + '0';
-
-  int index = 3;
-  int k;
-
-  for(k = 0; k < strlen(fileSize); k++, index++)
-    controlPacket[index] = fileSize[k];
-
-  controlPacket[index++] = FILE_NAME + '0';
-  controlPacket[index++] = strlen(FILE_PATH) + '0';
-
-  for(k = 0; k < strlen(FILE_PATH); k++, index++)
-    controlPacket[index] = fileSize[k];
-
-  /* TODO: Chama llwrite, lidando com os erros */
-}
-
 void writeDataPacket(char* buffer, int noBytes, int seqNo) {
   int dataPkSize = noBytes + 4; /* 4 bytes from C, N, L2 and L1 */
 
@@ -290,4 +292,35 @@ void writeDataPacket(char* buffer, int noBytes, int seqNo) {
   memcpy(&dataPacket[4], buffer, noBytes);
 
   /* TODO: Chama llwrite, lidando com os erros */
+}
+
+int sendFile() {
+  char * packetBuffer = malloc(PACKET_SIZE * sizeof(char));
+  int read, seqNo;
+  
+  /* Handle possible error */
+  writeControlPacket(CTRL_START);
+
+  while((read=fread(packetBuffer, sizeof(char), PACKET_SIZE, traF->file)) > 0) {
+    /* Handle possible error */
+    writeDataPacket(packetBuffer, read, (seqNo % 255)); /* seqNo is module 255 */
+
+    seqNo++;
+  }
+
+  /* Handle possible error - In case of success*/
+  writeControlPacket(CTRL_END);
+
+  return 0;
+}
+
+int receiveControlPacket() {
+
+}
+
+int receiveDataPacket() {
+  
+}
+
+int receiveFile() {
 }

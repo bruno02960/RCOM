@@ -25,7 +25,7 @@ int applicationLayerInit(int status) {
 
 	appL->status = status;	/* What's the application layer status? */;
 
-	openFile();
+	transferFileInit();
 
 	return 0;
 }
@@ -72,7 +72,7 @@ int closeSerialPort(){
 	return 0;
 }
 
-int transferFileInit(){
+int transferFileInit() {
 	struct stat st;
 
 	traF = (transferFile_t*) malloc(sizeof(transferFile_t));
@@ -96,4 +96,11 @@ int transferFileInit(){
 	}
 
 	return 0;	
+}
+
+int transferFileClose() {
+	if(fclose(traF->file) < 0) {
+		printf("Unable to close transfer file!\n");
+		exit(1);
+	}
 }

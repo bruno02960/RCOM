@@ -3,7 +3,11 @@
 #define TRANSMITTER 0
 #define RECEIVER 1
 
+#define CTRL_START 2
+#define CTRL_END 3
+
 #define COMMAND_SIZE 5
+#define DATA_SIZE 6
 
 #define DATA_BYTE 1
 #define START_BYTE 2
