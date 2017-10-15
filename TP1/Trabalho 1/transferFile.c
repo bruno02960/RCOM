@@ -1,5 +1,6 @@
-
+#include "definitions.h"
 #include "transferFile.h"
+#include <stdlib.h>
 
 transferFile_t* traF;
 char* FILE_PATH="./file";

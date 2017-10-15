@@ -1,5 +1,7 @@
 #include "stuffing.h"
-
+#include "definitions.h"
+#include <stdlib.h>
+#include <string.h>
 
 /* Reserve space for function return */
 char* stuffing(char* buf) {
