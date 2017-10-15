@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Reserve space for function return */
 char* stuffing(char* buf) {
   char* stuffed = malloc(1024);
   unsigned int size = strlen(stuffed);
@@ -28,7 +27,6 @@ char* stuffing(char* buf) {
   return stuffed;
 }
 
-/* Not finished AT ALL */
 char* destuffing(char* buf) {
   char* destuffed = malloc(1024);
 

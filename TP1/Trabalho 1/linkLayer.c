@@ -34,18 +34,18 @@ int linkLayerInit(char * port, int status) {
 
     linkL->timeout = TIMEOUT;
     linkL->baudRate = BAUDRATE;                   /*Velocidade de transmissão*/
-    //  linkL->sequenceNumber = 0;                /*Número de sequência da trama: 0, 1*/
-    linkL->numTransmissions = NUM_TRANSMISSIONS;   /*Número de tentativas em caso de falha*/
-
-                              // HOW???
-                              //linkL->frame[MAX_SIZE];     /*Trama */
+    linkL->sequenceNumber = 0;                    /*Número de sequência da trama: 0, 1*/
+    linkL->numTransmissions = NUM_TRANSMISSIONS;  /*Número de tentativas em caso de falha*/
+    //linkL->frame[MAX_SIZE];                     /*Trama */
 
     applicationLayerInit(status);
 
     saveAndSetTermios();
 
-    /* Handle errors */
-    llopen();
+    if(llopen()) {
+      printf("Error in llopen!\n");
+      exit(1);
+    }
 
     switch(appL->status) {
       case TRANSMITTER:
@@ -58,8 +58,10 @@ int linkLayerInit(char * port, int status) {
         exit(1); 
     }
 
-    /* Handle errors */
-    llclose();
+    if(llclose()) {
+      printf("Error in llclose!\n");
+      exit(1);
+    }
 
     closeSerialPort();
 
@@ -74,7 +76,7 @@ int llopen() {
 
     switch (appL->status) {
       case TRANSMITTER:
-          while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas */ ) {
+          while (alarmCounter < NO_TRIES) {
               if (alarmCounter == 0 || alarmFlag == 1) {
                   setAlarm();
                   writeCommand(SET);
@@ -86,34 +88,35 @@ int llopen() {
 
               if (received[2] == CTRL_UA) {
                   printf("UA received!\n");
-                  break; /* Indicar qual se pretende receber ou verificar após ser recebido? */
+                  break;
               }
-              /* Recebe UA */
           }
 
           stopAlarm();
 
           if (alarmCounter < NO_TRIES)
               printf("Connection successfully done!\n");
-          else
+          else {
               printf("Connection couldn't be done!\n");
+              return 1;
+            }
           break;
 
       case RECEIVER:
           received=receiveFrame(&frType, NULL, NULL);
 
-          if (received[2] == CTRL_SET /* Recebe SET */ ) {
+          if (received[2] == CTRL_SET) {
               writeCommand(UA);
               printf("Connection successfully done!\n");
           }
-          else
+          else {
               printf("Connection couldn't be done!\n");
+              return 1;
+          }
           break;
     }
 
-    return appL->fileDescriptor;
-    /*  – identificador da ligação de dados
-      – valor negativo em caso de erro */
+    return 0;
 }
 
 int llwrite(unsigned char * buffer, int length) {
@@ -144,16 +147,7 @@ int llwrite(unsigned char * buffer, int length) {
     else
       printf("Couldn't write!\n");
 
-  /* 
-  codigo do writenoncanonical.c 
-
-  Escreve I
-  Espera por RR / REJ
-  */
-
   return written;
-  /*  – número de caracteres escritos
-    – valor negativo em caso de erro */
 }
 
 int llread(unsigned char ** buffer) {
@@ -189,28 +183,13 @@ int llread(unsigned char ** buffer) {
             writeCommand(RR);
 
       default:
-        exit(1);   
+        return 1;  
     }
 
     return 0;
-    /* Recebe I */
-
-    /* Verifica info recebida e escreve RR / REJ */
-
-    /* Fica alerta para a possibilidade de DISC */
   }
 
-  /*
-  codigo do noncanonical.c
-
-  Espera por I
-  Escreve RR / REJ
-  */
-
   return read;
-  /*  – comprimento do array
-    (número de caracteres lidos)
-    – valor negativo em caso de erro */
 }
 
 int llclose() {
@@ -219,7 +198,7 @@ int llclose() {
 
   switch (appL -> status) {
   case TRANSMITTER:
-    while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas */ ) {
+    while (alarmCounter < NO_TRIES) {
 
       if (alarmCounter == 0 || alarmFlag == 1) {
         setAlarm();
@@ -231,12 +210,18 @@ int llclose() {
       response = receiveFrame(NULL, NULL, NULL);
 
       if (response[2] == CTRL_DISC)
-        writeCommand(UA); /* Recebe DISC */
+        writeCommand(UA);
     }
+      if (alarmCounter < NO_TRIES)
+        printf("Disconnection successfully done!\n");
+      else {
+        printf("Disconnection couldn't be done!\n");
+        return 1;
+      }
     stopAlarm();
     break;
   case RECEIVER:
-    while (alarmCounter < NO_TRIES /* TODO: Substituir nr. tentativas */ ) {
+    while (alarmCounter < NO_TRIES) {
 
       if (alarmCounter == 0 || alarmFlag == 1) {
         setAlarm();
@@ -254,23 +239,16 @@ int llclose() {
     stopAlarm();
     
     if (alarmCounter < NO_TRIES)
-      printf("Connection successfully done!\n");
-    else
-      printf("Connection couldn't be done!\n");
+      printf("Disconnection successfully done!\n");
+    else {
+      printf("Disconnection couldn't be done!\n");
+      return 1;
+    }
 
     break;
   }
 
-  /*
-  Escreve DISC
-  Recebe DISC
-  Escreve UA
-  */
-
-  return 1;
-  /*  – valor positivo em caso de sucesso
-    – valor negativo em caso de erro */
-
+  return 0;
 }
 
 
@@ -304,7 +282,7 @@ int writeCommand(Command command) {
     default:
         break;
     }
-    buf[3] = buf[1] ^ buf[2]; //BCC
+    buf[3] = buf[1] ^ buf[2];
 
     buf[4] = FLAG;
 
@@ -325,20 +303,27 @@ int sendFile() {
   char * packetBuffer = malloc(PACKET_SIZE * sizeof(char));
   int read, seqNo;
   
-  /* Handle possible error */
-  writeControlPacket(CTRL_START);
+  if(writeControlPacket(CTRL_START)) {
+    printf("Error on writing control packet in sendFile!\n");
+    exit(1);
+  }
 
   while((read=fread(packetBuffer, sizeof(char), PACKET_SIZE, traF->file)) > 0) {
-    /* Handle possible error */
-    writeDataPacket(packetBuffer, read, (seqNo % 255)); /* seqNo is module 255 */
+  
+    if(writeDataPacket(packetBuffer, read, (seqNo % 255))) {    /* seqNo is module 255 */
+      printf("Error on writing data packet in sendFile!\n");
+      exit(1);
+    }
 
     seqNo++;
   }
 
   transferFileClose();
 
-  /* Handle possible error - In case of success*/
-  writeControlPacket(CTRL_END);
+  if(writeControlPacket(CTRL_END)) {
+    printf("Error on writing control packet in sendFile!\n");
+    exit(1);
+  }
 
   return 0;
 }
@@ -347,8 +332,10 @@ int sendFile() {
 int receiveFile() {
   int fileSize;
 
-  /* Handle errors */
-  receiveControlPacket(START_BYTE, &fileSize, &FILE_PATH);
+  if(receiveControlPacket(START_BYTE, &fileSize, &FILE_PATH)) {
+    printf("Error on receiving control packet in receiveFile!\n");
+    exit(1);
+  }
 
   int read, noBytes, seqNo;
   unsigned char * buffer = malloc(PACKET_SIZE * sizeof(char));
@@ -365,8 +352,10 @@ int receiveFile() {
 
   transferFileClose();
 
-  /* Handle errors */
-  receiveControlPacket(END_BYTE, &fileSize, &FILE_PATH);
+  if(receiveControlPacket(END_BYTE, &fileSize, &FILE_PATH)) {
+    printf("Error on receiving control packet in receiveFile!\n");
+    exit(1);
+  }
 
   return 0;
 }

@@ -20,13 +20,13 @@ struct termios oldtio, newtio;
 int applicationLayerInit(int status) {
 	appL = (applicationLayer_t*) malloc(sizeof(applicationLayer_t));
 
-	if((appL->fileDescriptor = open(linkL->port/* What's the serial port to be oppened? */, O_RDWR | O_NOCTTY)) < 0)
+	if((appL->fileDescriptor = open(linkL->port, O_RDWR | O_NOCTTY)) < 0)
 	{
 		printf("Error on oppening serial port!\n");
 		exit(1);
 	}
 
-	appL->status = status;	/* What's the application layer status? */;
+	appL->status = status;
 
 	transferFileInit(appL->status);
 
@@ -48,8 +48,8 @@ int saveAndSetTermios() {
 	/* set input mode (non-canonical, no echo,...) */
 	newtio.c_lflag = 0;
 
-	newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
-	newtio.c_cc[VMIN] = 1; /* blocking read until 5 chars received */
+	newtio.c_cc[VTIME] = 0;		/* inter-character timer unused */
+	newtio.c_cc[VMIN] = 1;		/* blocking read until 5 chars received */
 
 	if (tcflush(appL->fileDescriptor, TCIFLUSH) == -1) {
 	    perror("tcflush");

@@ -5,9 +5,9 @@
 #include "definitions.h"
 
 
-void writeControlPacket(int controlField);
+int writeControlPacket(int controlField);
 
-void writeDataPacket(char* buffer, int noBytes, int seqNo);
+int writeDataPacket(char* buffer, int noBytes, int seqNo);
 
 int receiveControlPacket(int controlField, int* noBytes, char** filePath);
 

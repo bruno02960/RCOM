@@ -29,8 +29,10 @@ void writeControlPacket(int controlField) {
 
     if(llwrite(controlPacket, ctrlPkSize) < 0) {
       printf("Error on llwrite!\n");
-      exit(1);
+      return 1;
     }
+
+    return 0;
 }
 
 void writeDataPacket(char* buffer, int noBytes, int seqNo) {
@@ -48,24 +50,28 @@ void writeDataPacket(char* buffer, int noBytes, int seqNo) {
 
     if(llwrite(dataPacket, dataPkSize) < 0) {
       printf("Error on llwrite!\n");
-      exit(1);
+      return 1;
     }
+
+    return 0;
 }
 
 int receiveControlPacket(int controlField, int* noBytes, char** filePath) {
     unsigned char* controlPacket;
 
-    /* Handle possible errors */
-    llread(&controlPacket);
+    if (llread(&controlPacket)) {
+      printf("Error on receiving control packet at llread()!\n");
+      return 1;
+    }
 
     if((controlPacket[0] - '0') != controlField) {
       printf("Unexpected control field!\n");
-      exit(1);
+      return 1;
     }
 
     if((controlPacket[1] - '0') != FILE_SIZE) {
       printf("Unexpected parameter!\n");
-      exit(1);
+      return 1;
     }
 
     int lengthSize = (controlPacket[2] - '0');
@@ -97,8 +103,10 @@ int receiveDataPacket(unsigned char ** buffer, int sequenceNumber) {
     unsigned char* dataPacket;
     int read;
 
-    /* Handle possible errors */
-    llread(&dataPacket);
+    if(llread(&dataPacket)) {
+      printf("Error on receiving data packet at llread()!\n");
+      exit(1);
+    }
 
     int controlField = dataPacket[0] - '0';
     int seqNo = dataPacket[1] - '0';
