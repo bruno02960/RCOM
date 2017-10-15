@@ -7,7 +7,6 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
-//#include "applicationLayer.h"  may not be needed
 #include "linkLayer.h"
 
 int main(int argc, char** argv) {

@@ -1,8 +1,3 @@
-#include "applicationLayer.h"
-#include "linkLayer.h"
-#include "configs.h"
-#include "definitions.h"
-#include "alarm.h"
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,8 +8,11 @@
 #include <unistd.h>
 #include <string.h>
 #include "transferFile.h"
-#include "handlePackets.h"
-#include "stuffing.h"
+#include "applicationLayer.h"
+#include "linkLayer.h"
+#include "configs.h"
+#include "definitions.h"
+#include "alarm.h"
 
 applicationLayer_t* appL;
 struct termios oldtio, newtio;

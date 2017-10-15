@@ -1,6 +1,9 @@
 #pragma once
 
 #include "linkLayer.h"
+#include "transferFile.h"
+#include "definitions.h"
+
 
 void writeControlPacket(int controlField);
 

@@ -26,7 +26,7 @@ int transferFileInit(int status) {
     {
         printf("Unable to get file size!\n");
         exit(1);
-     }
+    }
 
     return 0;
 }
