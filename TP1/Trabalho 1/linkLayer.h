@@ -33,12 +33,16 @@ Command;
 extern linkLayer_t* linkL;
 
 int linkLayerInit(char* port, int status);
-char* destuffing(char* buf);
-char* stuffing(char* buf);
-int sendFile();
-int receiveFile();
 
 int llopen();
 int llwrite(unsigned char * buffer, int length);
 int llread(unsigned char ** buffer);
 int llclose();
+
+int writeCommand(Command command);
+
+int sendFile();
+int receiveFile();
+
+int writeDataFrame(unsigned char* data, unsigned int length);
+char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize);
