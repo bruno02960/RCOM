@@ -71,7 +71,6 @@ int linkLayerInit(char * port, int status) {
 
 int llopen() {
     int alarmCounter = 0;
-    char* received;
     FrameType frType;
 
     switch (appL->status) {
@@ -365,8 +364,8 @@ int receiveFile() {
 int writeDataFrame(unsigned char* data, unsigned int length) {
     char *frame = malloc(1024);
     int size = length + DATA_SIZE;
-    unsigned char bcc2;
-    int dataInd, i;
+    unsigned char bcc2 = 0;
+    int dataInd;
 
 
     frame[0] = FLAG;
@@ -377,8 +376,8 @@ int writeDataFrame(unsigned char* data, unsigned int length) {
     memcpy(&frame[4], data, size);
 
 	/* THE ERROR IS HERE!!!!*/
-    for(i = 0; i < size; i++) {
-        bcc2 ^= data[dataInd++];
+    for(dataInd = 0; dataInd < size; dataInd++) {
+        bcc2 ^= data[dataInd];
     }
 
     frame[4 + size] = bcc2;
@@ -485,8 +484,9 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
     if((*fType) == DATA) {
       unsigned char bcc2;
       int dataInd=4;
+	char * destuffed = destuffing(linkL->frame);
 
-      (*linkL->frame) = destuffing(linkL->frame);
+      strcpy(linkL->frame, destuffed);
 
       /* Is there necessity to check BCC1? */
 

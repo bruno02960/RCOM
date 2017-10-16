@@ -1,6 +1,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "handlePackets.h"
+#include "linkLayer.h"
+#include "transferFile.h"
+#include "definitions.h"
 
 int writeControlPacket(int controlField) {
     char fileSize[14];  /* 10.7KB = 10 700B | log2(10 700)~=14 */
