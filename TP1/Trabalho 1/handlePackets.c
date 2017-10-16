@@ -48,6 +48,7 @@ int writeDataPacket(char* buffer, int noBytes, int seqNo) {
     dataPacket[3] = noBytes % 256;
     memcpy(&dataPacket[4], buffer, noBytes);
 
+	printf("here");
     if(llwrite(dataPacket, dataPkSize) < 0) {
       printf("Error on llwrite!\n");
       return 1;

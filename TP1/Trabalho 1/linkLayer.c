@@ -43,11 +43,12 @@ int linkLayerInit(char * port, int status) {
     saveAndSetTermios();
 
     if(llopen()) {
-      printf("Error in llopen!\n");
+     printf("Error in llopen!\n");
       exit(1);
     }
 
-    /*switch(appL->status) {
+ 
+    switch(appL->status) {
       case TRANSMITTER:
         sendFile();
         break;
@@ -57,11 +58,10 @@ int linkLayerInit(char * port, int status) {
       default:
         exit(1); 
     }
-
-    if(llclose()) {
+  if(llclose()) {
       printf("Error in llclose!\n");
       exit(1);
-    }*/
+    }
 
     closeSerialPort();
 
@@ -91,10 +91,8 @@ int llopen() {
                   break;
               }
           }
-
           stopAlarm();
-
-          if (alarmCounter < NO_TRIES)
+          if (alarmCounter < NO_TRIES) 
               printf("Connection successfully done!\n");
           else {
               printf("Connection couldn't be done!\n");
@@ -104,7 +102,6 @@ int llopen() {
 
       case RECEIVER:
           receiveFrame(&frType, NULL, NULL);
-	printf("HERE!\n");
 
           if (linkL->frame[2] == CTRL_SET) {
               writeCommand(UA);
@@ -371,12 +368,15 @@ int writeDataFrame(unsigned char* data, unsigned int length) {
     unsigned char bcc2;
     int dataInd, i;
 
+
     frame[0] = FLAG;
     frame[1] = ADDR_S;
     frame[2] = linkL->sequenceNumber << 5;
     frame[3] = frame[1] ^ frame[2];
+
     memcpy(&frame[4], data, size);
 
+	/* THE ERROR IS HERE!!!!*/
     for(i = 0; i < size; i++) {
         bcc2 ^= data[dataInd++];
     }
@@ -397,7 +397,7 @@ int writeDataFrame(unsigned char* data, unsigned int length) {
 char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
     char c;
     int res, ind;
-    ReceivingState rState;
+    ReceivingState rState=0;
 
 	printf("fType=%d\n", *fType);
 
@@ -407,8 +407,10 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
 	printf("0x%02x!\n", c);
 	printf("rState=%d!\n", rState);
 	printf("ind=%d!\n", ind);
+	
 
         if (res > 0) {
+
             switch(rState) {
             case START:
                 if (c == FLAG) {
@@ -507,7 +509,12 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
     }
 	printf("After evaluation!\n");
 	
-printf("HERE!\n");
+
+	int a;
+	for (a = 0; a < 5; a++)
+		printf("frame[%d]=0x%x\n", a, linkL->frame[a]);
 
 	return NULL;
 }
+
+
