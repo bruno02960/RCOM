@@ -15,17 +15,17 @@ int transferFileInit(int status) {
             printf("Unable to open file!\n");
             exit(1);
         }
-        else if (!(traF->file = fopen(FILE_PATH, "wb"))) {
-            printf("Unable to open file!\n");
+        
+        if(stat(FILE_PATH,&st)==0)
+            traF->fileSize = st.st_size;
+        else
+        {
+            printf("Unable to get file size!\n");
             exit(1);
         }
     }
-
-    if(stat(FILE_PATH,&st)==0)
-    	traF->fileSize = st.st_size;
-    else
-    {
-        printf("Unable to get file size!\n");
+    else if (!(traF->file = fopen(FILE_PATH, "wb"))) {
+        printf("Unable to open file!\n");
         exit(1);
     }
 
