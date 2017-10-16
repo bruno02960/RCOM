@@ -47,7 +47,7 @@ int linkLayerInit(char * port, int status) {
       exit(1);
     }
 
-    switch(appL->status) {
+    /*switch(appL->status) {
       case TRANSMITTER:
         sendFile();
         break;
@@ -61,7 +61,7 @@ int linkLayerInit(char * port, int status) {
     if(llclose()) {
       printf("Error in llclose!\n");
       exit(1);
-    }
+    }*/
 
     closeSerialPort();
 
@@ -84,9 +84,9 @@ int llopen() {
                   alarmCounter++;
               }
 
-              received=receiveFrame(&frType, NULL, NULL);
+              receiveFrame(&frType, NULL, NULL);
 
-              if (received[2] == CTRL_UA) {
+              if (linkL->frame[2] == CTRL_UA) {
                   printf("UA received!\n");
                   break;
               }
@@ -103,9 +103,10 @@ int llopen() {
           break;
 
       case RECEIVER:
-          received=receiveFrame(&frType, NULL, NULL);
+          receiveFrame(&frType, NULL, NULL);
+	printf("HERE!\n");
 
-          if (received[2] == CTRL_SET) {
+          if (linkL->frame[2] == CTRL_SET) {
               writeCommand(UA);
               printf("Connection successfully done!\n");
           }
@@ -230,9 +231,9 @@ int llclose() {
         alarmCounter++;
       }
 
-      response = receiveFrame(NULL, NULL, NULL);
+      receiveFrame(NULL, NULL, NULL);
 
-      if (response[2] == CTRL_UA)
+      if (linkL->frame[2] == CTRL_UA)
         printf("Disconnection successfully done!\n");
     }
 
@@ -292,6 +293,9 @@ int writeCommand(Command command) {
         printf("Error on writting!\n");
         return -1;
     }
+	else {
+	printf("Command successfully written!\n");
+}
 
     /* What's the adress byte? */
     /* What's RR & REJ BCC ? */
@@ -393,23 +397,28 @@ int writeDataFrame(unsigned char* data, unsigned int length) {
 char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
     char c;
     int res, ind;
-    char *ua = malloc(1024);
     ReceivingState rState;
 
-    while (alarmFlag != 1) {
+	printf("fType=%d\n", *fType);
+
+    while (alarmFlag != 1 && rState!=STOP) {
         res = read(appL->fileDescriptor, &c, 1);
+
+	printf("0x%02x!\n", c);
+	printf("rState=%d!\n", rState);
+	printf("ind=%d!\n", ind);
 
         if (res > 0) {
             switch(rState) {
             case START:
                 if (c == FLAG) {
-                    ua[ind++]=c;
+                    linkL->frame[ind++]=c;
                     rState++;
                 }
                 break;
             case FLAG_RCV:
                 if (c == ADDR_S || c == ADDR_R) {
-                    ua[ind++]=c;
+                    linkL->frame[ind++]=c;
                     rState++;
                 }
                 else if (c!=FLAG) {
@@ -419,7 +428,7 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
                 break;
             case A_RCV:
                 if (c != FLAG) {
-                    ua[ind++]=c;
+                    linkL->frame[ind++]=c;
                     rState++;
                 }
                 else if (c==FLAG) {
@@ -432,8 +441,8 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
                 }
                 break;
             case C_RCV:
-                if (c == (ua[1]^ua[2])) {
-                    ua[ind++]=c;
+                if (c == (linkL->frame[1]^linkL->frame[2])) {
+                    linkL->frame[ind++]=c;
                     rState++;
                 }
                 else {
@@ -449,14 +458,15 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
                 break;
             case BCC_OK:
                 if (c == FLAG) {
-                    ua[ind++]=c;
+                    linkL->frame[ind++]=c;
                     rState++;
+	printf("rState=%d!\n", rState);
 
                     if(ind > 5)
                         (*fType) = DATA;
                 }
                 else
-                    ua[ind++] = c;
+                    linkL->frame[ind++] = c;
                 break;
             case STOP:
                 break;
@@ -465,14 +475,16 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
             }
         }
         else
-            return ua;
+            return NULL;
     }
+
+	printf("Before evaluation!\n");
 
     if((*fType) == DATA) {
       unsigned char bcc2;
       int dataInd=4;
 
-      ua = destuffing(ua);
+      (*linkL->frame) = destuffing(linkL->frame);
 
       /* Is there necessity to check BCC1? */
 
@@ -480,19 +492,22 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
 
       int i;
       for(i = 0; i < size; i++) {
-        bcc2 ^= ua[dataInd++];
+        bcc2 ^= linkL->frame[dataInd++];
       }
 
-      if(ua[4 + size] != bcc2) {
+      if(linkL->frame[4 + size] != bcc2) {
         printf("Error on BCC2!\n");
         (*fResp) = RESP_REJ;
       }
 
       if(*fResp == 0)
         (*fResp) = RESP_RR;
-    }
 
     (*fSize) = ind;
+    }
+	printf("After evaluation!\n");
+	
+printf("HERE!\n");
 
-    return ua;
+	return NULL;
 }
