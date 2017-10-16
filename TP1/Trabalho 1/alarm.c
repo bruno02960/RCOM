@@ -19,7 +19,7 @@ void setVMIN (int noChars) {
 		exit(-1);
 	}
 
-  	oldtio.c_cc[VMIN]     = 0;   /* blocking read until 5 chars received */
+  	oldtio.c_cc[VMIN]     = noChars;   /* blocking read until 5 chars received */
 
 	tcflush(appL->fileDescriptor, TCIFLUSH);
 

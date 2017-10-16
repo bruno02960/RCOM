@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "handlePackets.h"
 
-void writeControlPacket(int controlField) {
+int writeControlPacket(int controlField) {
     char fileSize[14];  /* 10.7KB = 10 700B | log2(10 700)~=14 */
     sprintf(fileSize, "%d", traF->fileSize);
 
@@ -35,7 +35,7 @@ void writeControlPacket(int controlField) {
     return 0;
 }
 
-void writeDataPacket(char* buffer, int noBytes, int seqNo) {
+int writeDataPacket(char* buffer, int noBytes, int seqNo) {
     int dataPkSize = noBytes + 4; /* 4 bytes from C, N, L2 and L1 */
 
     unsigned char dataPacket[dataPkSize];
