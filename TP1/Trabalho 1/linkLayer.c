@@ -132,7 +132,7 @@ int llwrite(unsigned char * buffer, int length) {
     receiveFrame(&frType, NULL, NULL);
 
   printf("linkL->frame[2]=%02x\n",linkL->frame[2]);
-  printf("linkL->frame[2]=%02x\n",((linkL->sequenceNumber<<5) | CTRL_RR));
+  printf("((linkL->sequenceNumber<<5) | CTRL_RR)=%02x\n",((linkL->sequenceNumber<<5) | CTRL_RR));
 
    if (linkL->frame[2] == (CTRL_RR | (linkL->sequenceNumber<<5))) {
   printf("RR received\n");
@@ -140,6 +140,7 @@ int llwrite(unsigned char * buffer, int length) {
   break;
       } 
    else if (linkL->frame[2] == (CTRL_REJ | (linkL->sequenceNumber<<5))) {
+  printf("REJ received\n");
        stopAlarm();
   break;
       }  
@@ -154,13 +155,13 @@ int llwrite(unsigned char * buffer, int length) {
 }
 
 int llread(unsigned char ** buffer) {
-  int read = 0, disconnect = 0, fSize, dataSize;
+  int read = 0, disconnect = 0, fSize, dataSize, answered = 0;
   FrameType frType = 0;
   FrameResponse fResp = 0;
 
-  while (disconnect == 0) 
+  while (disconnect == 0 && answered == 0) 
   {
-	printf("Not disconnected!\n");
+	printf("Not disconnected nor answered!\n");
     receiveFrame(&frType, &fResp, &fSize);
 
 	printf("frType=%d\n", frType);
@@ -182,7 +183,7 @@ int llread(unsigned char ** buffer) {
           dataSize = fSize - DATA_SIZE;
           *buffer = malloc(dataSize);
           memcpy(*buffer, &linkL->frame[4], dataSize);
-          disconnect = 1;
+          answered = 1;
         } 
         else
           if (fResp == RESP_REJ) 
