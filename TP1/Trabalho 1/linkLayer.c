@@ -48,7 +48,7 @@ int linkLayerInit(char * port, int status) {
     }
 
  
-    switch(appL->status) {
+    /*switch(appL->status) {
       case TRANSMITTER:
         sendFile();
         break;
@@ -61,7 +61,7 @@ int linkLayerInit(char * port, int status) {
   if(llclose()) {
       printf("Error in llclose!\n");
       exit(1);
-    }
+    }*/
 
     closeSerialPort();
 
@@ -271,10 +271,10 @@ int writeCommand(Command command) {
         buf[2] = CTRL_UA;
         break;
     case RR:
-        buf[2] = CTRL_RR;
+        buf[2] = CTRL_RR | (linkL->sequenceNumber<<5);
         break;
     case REJ:
-        buf[2] = CTRL_REJ;
+        buf[2] = CTRL_REJ | (linkL->sequenceNumber<<5);
         break;
     default:
         break;
@@ -395,7 +395,7 @@ int writeDataFrame(unsigned char* data, unsigned int length) {
 
 char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
     char c;
-    int res, ind;
+    int res, ind=0;
     ReceivingState rState=0;
 
 	printf("fType=%d\n", *fType);
@@ -413,7 +413,9 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
             switch(rState) {
             case START:
                 if (c == FLAG) {
+					printf("HERE!\n");
                     linkL->frame[ind++]=c;
+					printf("HERE!\n");
                     rState++;
                 }
                 break;
