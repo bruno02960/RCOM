@@ -46,7 +46,6 @@ int linkLayerInit(char * port, int status) {
       exit(1);
     }
 
- 
    switch(appL->status) {
       case TRANSMITTER:
         sendFile();
@@ -332,6 +331,7 @@ int sendFile() {
 
   /*while(*/(read=fread(packetBuffer, sizeof(char), PACKET_SIZE, traF->file)) > 0;// ){
   
+  	printf("seqNo sent=%d\n", (seqNo % 255));
     if(writeDataPacket(packetBuffer, read, (seqNo % 255))) {    //seqNo is module 255
       printf("Error on writing data packet in sendFile!\n");
       exit(1);
@@ -362,13 +362,14 @@ int receiveFile() {
 	printf("Control packet received!\n");
   }
 
-  int read, noBytes = 0, seqNo = 1;
+  int read, noBytes = 0, seqNo = 0;
   unsigned char * buffer = malloc(PACKET_SIZE * sizeof(char));
 
 	printf("Preparing to receive data packet...\n");
 
   //while(noBytes < fileSize) {
-    if((read = receiveDataPacket(&buffer, seqNo % 255))<0)
+  	printf("seqNo expected=%d\n", (seqNo % 255));
+    if((read = receiveDataPacket(&buffer, (seqNo % 255)))<0)
       exit(1);
 
     noBytes += read;
@@ -464,7 +465,9 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
             switch(rState) {
             case START:
                 if (c == FLAG) {
+					printf("HERE!\n");
                     linkL->frame[ind++]=c;
+					printf("HERE!\n");
                     rState++;
                 }
                 break;
