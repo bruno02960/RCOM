@@ -28,12 +28,17 @@ int writeControlPacket(int controlField) {
     controlPacket[index++] = strlen(FILE_PATH) + '0';
 
     for(k = 0; k < strlen(FILE_PATH); k++, index++)
-      controlPacket[index] = fileSize[k];
+      controlPacket[index] = FILE_PATH[k];
 
     if(llwrite(controlPacket, ctrlPkSize) < 0) {
       printf("Error on llwrite!\n");
       return 1;
     }
+    else {
+      printf("ControlPacket successfully written!\n");
+    }
+
+  linkL->sequenceNumber=!linkL->sequenceNumber;
 
     return 0;
 }
@@ -51,7 +56,6 @@ int writeDataPacket(char* buffer, int noBytes, int seqNo) {
     dataPacket[3] = noBytes % 256;
     memcpy(&dataPacket[4], buffer, noBytes);
 
-	printf("here");
     if(llwrite(dataPacket, dataPkSize) < 0) {
       printf("Error on llwrite!\n");
       return 1;
@@ -88,6 +92,8 @@ int receiveControlPacket(int controlField, int* noBytes, char** filePath) {
     fileSize[valueIndex - 3] = '\0';
     (*noBytes) = atoi(fileSize);
 
+	printf("noBytes=%d\n",(*noBytes));
+
     if((controlPacket[valueIndex++] - '0') != FILE_NAME)
       printf("Unexpected parameter!\n");
 
@@ -98,6 +104,9 @@ int receiveControlPacket(int controlField, int* noBytes, char** filePath) {
       path[i] = controlPacket[valueIndex++];
 
     path[i] = '\0';
+
+	printf("path=%s!\n", path);
+
     strcpy((*filePath), path);
 
     return 0;
@@ -111,6 +120,8 @@ int receiveDataPacket(unsigned char ** buffer, int sequenceNumber) {
       printf("Error on receiving data packet at llread()!\n");
       exit(1);
     }
+
+	printf("HERE at receiveDataPacket!\n");
 
     int controlField = dataPacket[0] - '0';
     int seqNo = dataPacket[1] - '0';

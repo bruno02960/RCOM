@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <termios.h>
@@ -48,7 +47,7 @@ int linkLayerInit(char * port, int status) {
     }
 
  
-    switch(appL->status) {
+   switch(appL->status) {
       case TRANSMITTER:
         sendFile();
         break;
@@ -58,10 +57,10 @@ int linkLayerInit(char * port, int status) {
       default:
         exit(1); 
     }
-  if(llclose()) {
+   /*if(llclose()) {
       printf("Error in llclose!\n");
       exit(1);
-    }
+    }*/
 
     closeSerialPort();
 
@@ -119,7 +118,9 @@ int llopen() {
 int llwrite(unsigned char * buffer, int length) {
   int alarmCounter = 0;
   int written = 0;
-  char * received;
+  FrameType frType;
+
+  printf("LLWRITE IN!\n");
 
   while (alarmCounter < NO_TRIES){
     if (alarmCounter == 0 || alarmFlag == 1) {
@@ -129,13 +130,19 @@ int llwrite(unsigned char * buffer, int length) {
       alarmCounter++;
     }
 
-    received=receiveFrame(NULL, NULL, NULL);
+    receiveFrame(&frType, NULL, NULL);
 
-   if (received[2] == CTRL_RR) {
+  printf("linkL->frame[2]=%02x\n",linkL->frame[2]);
+  printf("linkL->frame[2]=%02x\n",((linkL->sequenceNumber<<5) | CTRL_RR));
+
+   if (linkL->frame[2] == (CTRL_RR | (linkL->sequenceNumber<<5))) {
+  printf("RR received\n");
        stopAlarm();
+  break;
       } 
-   else if (received[2] == CTRL_REJ) {
+   else if (linkL->frame[2] == (CTRL_REJ | (linkL->sequenceNumber<<5))) {
        stopAlarm();
+  break;
       }  
     } 
 
@@ -149,41 +156,46 @@ int llwrite(unsigned char * buffer, int length) {
 
 int llread(unsigned char ** buffer) {
   int read = 0, disconnect = 0, fSize, dataSize;
-  char * frame;
-  FrameType frType;
-  FrameResponse fResp;
+  FrameType frType = 0;
+  FrameResponse fResp = 0;
 
-  while (!disconnect) {
-    frame = receiveFrame(&frType, &fResp, &fSize);
+  while (disconnect == 0) 
+  {
+	printf("Not disconnected!\n");
+    receiveFrame(&frType, &fResp, &fSize);
 
-    switch(frType) {
+	printf("frType=%d\n", frType);
+	printf("fResp=%d\n", fResp);
+
+    switch(frType) 
+	{
       case COMMAND:
-        if(frame[2] == CTRL_DISC)
+        if(linkL->frame[2] == CTRL_DISC)
           disconnect = 1;
         break;
       case DATA:
-        if(fResp == RESP_RR && ((frame[2]>>5) & BIT(0)) == linkL->sequenceNumber) {
+		printf("fResp=%d - RESP_RR=%d\n",fResp,RESP_RR);
+		printf("lL->sN=%02x - lL->frame=%02x\n",linkL->sequenceNumber,((linkL->frame[2]>>5) & BIT(0)));
+        if(fResp == RESP_RR && ((linkL->frame[2]>>5) & BIT(0)) == linkL->sequenceNumber) 
+		{
+            writeCommand(RR);
           linkL->sequenceNumber = !linkL->sequenceNumber;
           dataSize = fSize - DATA_SIZE;
           *buffer = malloc(dataSize);
-          memcpy(*buffer, &frame[4], dataSize);
+          memcpy(*buffer, &linkL->frame[4], dataSize);
           disconnect = 1;
         } 
         else
-          if (fResp == RESP_REJ) {
-            linkL->sequenceNumber = ((frame[2]>>5) & BIT(0));
-          }
-
-          if(fResp == RESP_REJ)
+          if (fResp == RESP_REJ) 
+			{
+            linkL->sequenceNumber = ((linkL->frame[2]>>5) & BIT(0));
             writeCommand(REJ);
-          else
-            writeCommand(RR);
-
+          	}
+		break;
       default:
         return 1;  
     }
-
-    return 0;
+	printf("disconnect=%d\n", disconnect);
   }
 
   return read;
@@ -253,6 +265,8 @@ int llclose() {
 int writeCommand(Command command) {
     unsigned char buf[COMMAND_SIZE];
 
+	printf("Preparing to write %d\n", command);
+
     buf[0] = FLAG;
 
 //  if (appL->status == TRANSMITTER)
@@ -271,10 +285,10 @@ int writeCommand(Command command) {
         buf[2] = CTRL_UA;
         break;
     case RR:
-        buf[2] = CTRL_RR;
+        buf[2] = CTRL_RR | (linkL->sequenceNumber<<5);
         break;
     case REJ:
-        buf[2] = CTRL_REJ;
+        buf[2] = CTRL_REJ | (linkL->sequenceNumber<<5);
         break;
     default:
         break;
@@ -284,6 +298,11 @@ int writeCommand(Command command) {
     buf[4] = FLAG;
 
     tcflush(appL->fileDescriptor, TCOFLUSH);
+
+	int res;
+
+	printf("Preparing to write command control %02x\n", buf[2]);
+	printf("SIZEOF(BUF)=%d\n",sizeof(buf));
 
     if (write(appL->fileDescriptor, &buf, 5) != sizeof(buf)) {
         printf("Error on writting!\n");
@@ -301,46 +320,54 @@ int writeCommand(Command command) {
 
 int sendFile() {
   char * packetBuffer = malloc(PACKET_SIZE * sizeof(char));
-  int read, seqNo;
+  int read, seqNo=0;
   
   if(writeControlPacket(CTRL_START)) {
     printf("Error on writing control packet in sendFile!\n");
     exit(1);
   }
+  else {
+    printf("Start control packet successfully written!\n");
+  }
 
-  while((read=fread(packetBuffer, sizeof(char), PACKET_SIZE, traF->file)) > 0) {
+  /*while(*/(read=fread(packetBuffer, sizeof(char), PACKET_SIZE, traF->file)) > 0;// ){
   
-    if(writeDataPacket(packetBuffer, read, (seqNo % 255))) {    /* seqNo is module 255 */
+    if(writeDataPacket(packetBuffer, read, (seqNo % 255))) {    //seqNo is module 255
       printf("Error on writing data packet in sendFile!\n");
       exit(1);
     }
 
     seqNo++;
-  }
+  //}
 
-  transferFileClose();
+  /*transferFileClose();
 
   if(writeControlPacket(CTRL_END)) {
     printf("Error on writing control packet in sendFile!\n");
     exit(1);
-  }
+  }*/
 
   return 0;
 }
 
-
 int receiveFile() {
   int fileSize;
+  char *filePath = (char *) malloc(100);
 
-  if(receiveControlPacket(START_BYTE, &fileSize, &FILE_PATH)) {
+  if(receiveControlPacket(START_BYTE, &fileSize, &filePath)) {
     printf("Error on receiving control packet in receiveFile!\n");
     exit(1);
   }
+  else {
+	printf("Control packet received!\n");
+  }
 
-  int read, noBytes, seqNo;
+  int read, noBytes = 0, seqNo = 1;
   unsigned char * buffer = malloc(PACKET_SIZE * sizeof(char));
 
-  while(noBytes < fileSize) {
+	printf("Preparing to receive data packet...\n");
+
+  //while(noBytes < fileSize) {
     if((read = receiveDataPacket(&buffer, seqNo % 255))<0)
       exit(1);
 
@@ -348,14 +375,14 @@ int receiveFile() {
 
     fwrite(buffer, sizeof(char), read, traF->file);
     seqNo++;
-  }
+  //}
 
-  transferFileClose();
+  /*transferFileClose();
 
   if(receiveControlPacket(END_BYTE, &fileSize, &FILE_PATH)) {
     printf("Error on receiving control packet in receiveFile!\n");
     exit(1);
-  }
+  }*/
 
   return 0;
 }
@@ -365,7 +392,7 @@ int writeDataFrame(unsigned char* data, unsigned int length) {
     char *frame = malloc(1024);
     int size = length + DATA_SIZE;
     unsigned char bcc2 = 0;
-    int dataInd;
+    int dataInd = 0;
 
 
     frame[0] = FLAG;
@@ -373,32 +400,56 @@ int writeDataFrame(unsigned char* data, unsigned int length) {
     frame[2] = linkL->sequenceNumber << 5;
     frame[3] = frame[1] ^ frame[2];
 
-    memcpy(&frame[4], data, size);
+    memcpy(&frame[4], data, length);
 
-	/* THE ERROR IS HERE!!!!*/
-    for(dataInd = 0; dataInd < size; dataInd++) {
+//    printf("length=%d\n",length);
+   printf("firstdata=%02x\n",data[dataInd]);  
+
+    for(dataInd = 0; dataInd < (size-DATA_SIZE); dataInd++) {
         bcc2 ^= data[dataInd];
     }
+   
+  printf("dataInd=%d\n",dataInd);
 
-    frame[4 + size] = bcc2;
-    frame[5 + size] = FLAG;
+  printf("lastdata[%d]=%02x\n",data[dataInd], dataInd); 
 
-    frame = stuffing(frame);
+    printf("bcc2=%02x\n",bcc2);
+//    printf("dataInd=%d\n",dataInd); 
 
-    if(write(appL->fileDescriptor, frame, size) != size) {
+    frame[4 + length] = bcc2;
+    frame[5 + length] = FLAG;
+
+   printf("bcc2 na frame=%02x\n",frame[4 + length]);
+
+   printf("SIZE BEFORE STUFF=%d\n",size);
+ //   printf("flag na frame=%02x\n",frame[5 + length]);
+    printf("5+length=%d\n",(5+length));
+    frame = stuffing(frame, &size); 
+    
+  printf("bcc2 na frame depois do stuffing=%02x\n",frame[size - 2]);
+//    printf("flag na frame depois do stuffing=%02x\n",frame[5 + length]);
+
+  int res = 0;
+  int i = 0;
+    for(i=0; i<size;i++)
+  printf("written[%i]=%02x\n",i,frame[i]);  
+
+    if((res=write(appL->fileDescriptor, frame, size)) != size) {
       printf("Error on writing data frame!\n");
       exit(1);
     }
+    else {
+  printf("%d bytes written!\n", res);
+  }
+
 
     return 0;
 }
 
 char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
     char c;
-    int res, ind;
+    int res, ind=0;
     ReceivingState rState=0;
-
-	printf("fType=%d\n", *fType);
 
     while (alarmFlag != 1 && rState!=STOP) {
         res = read(appL->fileDescriptor, &c, 1);
@@ -475,27 +526,40 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
                 break;
             }
         }
-        else
-            return NULL;
     }
 
 	printf("Before evaluation!\n");
 
     if((*fType) == DATA) {
-      unsigned char bcc2;
+      unsigned char bcc2 = 0;
       int dataInd=4;
-	char * destuffed = destuffing(linkL->frame);
+
+      int size = ind;
+
+	int i=0;
+
+	for(i=4; i<ind - 2; i++) {
+		printf("linkL->frame[%i]=%02x\n", i, linkL->frame[i]);
+	}
+
+	char * destuffed;
+
+	destuffed=destuffing(linkL->frame, &size);
+
+	size = ind - DATA_SIZE;
 
       strcpy(linkL->frame, destuffed);
 
       /* Is there necessity to check BCC1? */
 
-      int size = ind - DATA_SIZE;
+     printf("first data=%02x\n", linkL->frame[dataInd]);
 
-      int i;
       for(i = 0; i < size; i++) {
-        bcc2 ^= linkL->frame[dataInd++];
+        bcc2 ^= destuffed[dataInd++];
       }
+
+	  printf("last data %02x\n", linkL->frame[dataInd-1]);
+	  printf("bcc2=%02x\n",bcc2);
 
       if(linkL->frame[4 + size] != bcc2) {
         printf("Error on BCC2!\n");
@@ -509,10 +573,6 @@ char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize) {
     }
 	printf("After evaluation!\n");
 	
-
-	int a;
-	for (a = 0; a < 5; a++)
-		printf("frame[%d]=0x%x\n", a, linkL->frame[a]);
 
 	return NULL;
 }
