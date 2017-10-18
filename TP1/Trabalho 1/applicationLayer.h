@@ -17,5 +17,5 @@ extern applicationLayer_t* appL;
 */
 int applicationLayerInit(int status);
 
-int closeSerialPort();
+int closeSerialPort(int fd);
 int saveAndSetTermios();

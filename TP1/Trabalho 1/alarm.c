@@ -7,6 +7,7 @@
 #include "linkLayer.h"
 
 int alarmFlag = 0;
+int fileDescriptor = 0;
 
 void setVMIN (int noChars) {
 
@@ -39,7 +40,7 @@ void alarmHandler()
 }
 
 
-void setAlarm() {
+void setAlarm(int fd) {
 	(void) signal(SIGALRM, alarmHandler);
 
 	alarmFlag = 0;
@@ -47,10 +48,14 @@ void setAlarm() {
 	setVMIN(1);
 
 	alarm(linkL->timeout);
+
+	fileDescriptor=fd;
 }
 
-void stopAlarm() {
+void stopAlarm(int fd) {
 	(void) signal(SIGALRM, NULL);
 
 	alarm(0);
+
+	fileDescriptor=fd;
 }

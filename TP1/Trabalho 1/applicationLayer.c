@@ -64,13 +64,13 @@ int saveAndSetTermios() {
 	return 0;
 }
 
-int closeSerialPort(){
-	if (tcsetattr(appL->fileDescriptor,TCSANOW,&oldtio) == -1) {
+int closeSerialPort(int fd){
+	if (tcsetattr(fd,TCSANOW,&oldtio) == -1) {
     perror("tcsetattr");
     return 1;
 	}
 
-	close(appL->fileDescriptor);
+	close(fd);
 
 	return 0;
 }

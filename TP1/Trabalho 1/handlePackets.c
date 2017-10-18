@@ -5,8 +5,8 @@
 #include "transferFile.h"
 #include "definitions.h"
 
-int writeControlPacket(int controlField) {
-    char fileSize[14];  /* 10.7KB = 10 700B | log2(10 700)~=14 */
+int writeControlPacket(int controlField, int fd) {
+    unsigned char fileSize[14];  /* 10.7KB = 10 700B | log2(10 700)~=14 */
     sprintf(fileSize, "%d", traF->fileSize);
 
     int ctrlPkSize = 5 + strlen(fileSize) + strlen(FILE_PATH); /* 5 bytes
@@ -30,7 +30,7 @@ int writeControlPacket(int controlField) {
     for(k = 0; k < strlen(FILE_PATH); k++, index++)
       controlPacket[index] = FILE_PATH[k];
 
-    if(llwrite(controlPacket, ctrlPkSize) < 0) {
+    if(llwrite(controlPacket, ctrlPkSize, fd) < 0) {
       printf("Error on llwrite!\n");
       return 1;
     }
@@ -38,12 +38,10 @@ int writeControlPacket(int controlField) {
       printf("ControlPacket successfully written!\n");
     }
 
-  linkL->sequenceNumber=!linkL->sequenceNumber;
-
     return 0;
 }
 
-int writeDataPacket(char* buffer, int noBytes, int seqNo) {
+int writeDataPacket(char* buffer, int noBytes, int seqNo, int fd) {
     int dataPkSize = noBytes + 4; /* 4 bytes from C, N, L2 and L1 */
 
     unsigned char dataPacket[dataPkSize];
@@ -56,7 +54,7 @@ int writeDataPacket(char* buffer, int noBytes, int seqNo) {
     dataPacket[3] = noBytes % 256;
     memcpy(&dataPacket[4], buffer, noBytes);
 
-    if(llwrite(dataPacket, dataPkSize) < 0) {
+    if(llwrite(dataPacket, dataPkSize, fd) < 0) {
       printf("Error on llwrite!\n");
       return 1;
     }
@@ -64,10 +62,10 @@ int writeDataPacket(char* buffer, int noBytes, int seqNo) {
     return 0;
 }
 
-int receiveControlPacket(int controlField, int* noBytes, char** filePath) {
+int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePath, int fd) {
     unsigned char* controlPacket;
 
-    if (llread(&controlPacket)) {
+    if (llread(&controlPacket, fd)) {
       printf("Error on receiving control packet at llread()!\n");
       return 1;
     }
@@ -84,7 +82,7 @@ int receiveControlPacket(int controlField, int* noBytes, char** filePath) {
 
     int lengthSize = (controlPacket[2] - '0');
     int i, valueIndex = 3;
-    char fileSize[STR_SIZE];
+    unsigned char fileSize[STR_SIZE];
 
     for (i = 0; i < lengthSize; i++)
       fileSize[i] = controlPacket[valueIndex++];
@@ -98,7 +96,7 @@ int receiveControlPacket(int controlField, int* noBytes, char** filePath) {
       printf("Unexpected parameter!\n");
 
     int lengthPath = (controlPacket[valueIndex++] - '0');
-    char path[STR_SIZE];
+    unsigned char path[STR_SIZE];
 
     for (i = 0; i < lengthPath; i++)
       path[i] = controlPacket[valueIndex++];
@@ -107,16 +105,18 @@ int receiveControlPacket(int controlField, int* noBytes, char** filePath) {
 
 	printf("path=%s!\n", path);
 
+	printf("Before strcpy!\n");
     strcpy((*filePath), path);
+	printf("After strcpy!\n");
 
     return 0;
 }
 
-int receiveDataPacket(unsigned char ** buffer, int sequenceNumber) {
+int receiveDataPacket(unsigned char ** buffer, int sequenceNumber, int fd) {
     unsigned char* dataPacket;
     int read;
 
-    if(llread(&dataPacket)) {
+    if(llread(&dataPacket, fd)) {
       printf("Error on receiving data packet at llread()!\n");
       exit(1);
     }
@@ -137,7 +137,11 @@ int receiveDataPacket(unsigned char ** buffer, int sequenceNumber) {
     }
 
     int l2 = dataPacket[2], l1 = dataPacket[3];
-    read = 256 * l2 - l1;
+    read = 256 * l2 + l1;
+
+	printf("l1=%d\n",l1);
+	printf("l2=%d\n",l2);
+	printf("read=%d\n",read);
 
     memcpy((*buffer), &dataPacket[4], read);
     free(dataPacket);

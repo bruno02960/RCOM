@@ -1,9 +1,10 @@
 #pragma once
 
 extern int alarmFlag;
+extern int fileDescriptor;
 
 void handerALRM();
 
-void setAlarm();
+void setAlarm(int fd);
 
-void stopAlarm();
+void stopAlarm(int fd);
