@@ -185,7 +185,7 @@ int llread(unsigned char ** buffer, int fd) {
           linkL->sequenceNumber = !linkL->sequenceNumber;
           dataSize = fSize - DATA_SIZE;
           *buffer = malloc(dataSize);
-          memcpy(*buffer, &linkL->frame[4], dataSize);
+          memcpy(*buffer, &linkL->dataFrame[4], dataSize);
           answered = 1;
         } 
         else
@@ -577,6 +577,7 @@ counter++;
         (*fResp) = RESP_RR;
 
     (*fSize) = ind;
+    memcpy(linkL->dataFrame, destuffed, size);
     }
 	printf("After evaluation!\n");
 	
