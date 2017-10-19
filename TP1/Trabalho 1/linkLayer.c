@@ -221,16 +221,22 @@ int llclose(int fd) {
 
       receiveFrame(&frType, NULL, NULL, fd);
 
-      if (linkL->frame[2] == CTRL_DISC)
+      if (linkL->frame[2] == CTRL_DISC) {
         writeCommand(UA, fd);
+        break;
+        }
     }
-      if (alarmCounter < NO_TRIES)
+    
+    stopAlarm(fd);
+    
+      if (alarmCounter < NO_TRIES) {
         printf("Disconnection successfully done!\n");
+        return 0;
+       }
       else {
         printf("Disconnection couldn't be done!\n");
         return 1;
       }
-    stopAlarm(fd);
     break;
     
   case RECEIVER:
