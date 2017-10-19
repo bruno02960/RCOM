@@ -41,7 +41,7 @@ int writeControlPacket(int controlField, int fd) {
     return 0;
 }
 
-int writeDataPacket(char* buffer, int noBytes, int seqNo, int fd) {
+int writeDataPacket(unsigned char* buffer, int noBytes, int seqNo, int fd) {
     int dataPkSize = noBytes + 4; /* 4 bytes from C, N, L2 and L1 */
 
     unsigned char dataPacket[dataPkSize];

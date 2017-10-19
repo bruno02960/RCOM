@@ -6,7 +6,7 @@
 unsigned char* stuffing(unsigned char* buf, int* size) {
   unsigned char* stuffed = malloc(1024);
   int stuffedSize = (*size);
-  
+
   stuffed[0] = buf[0];
 
   int i, j = 1;
@@ -22,7 +22,7 @@ unsigned char* stuffing(unsigned char* buf, int* size) {
       stuffed[j] = buf[i];
   }
 
-  stuffed[j] = buf[i];  
+  stuffed[j] = buf[i];
 
 (*size)=stuffedSize;
 
@@ -39,8 +39,6 @@ unsigned char* stuffing(unsigned char* buf, int* size) {
 unsigned char* destuffing(unsigned char* buf, int* size) {
     unsigned char* destuffed = malloc(1024);
 
-	printf("SIZE=%d\n",(*size));
-
 	int destuffedSize = (*size);
 
     int i, j=4;
@@ -54,7 +52,7 @@ unsigned char* destuffing(unsigned char* buf, int* size) {
     if (buf[i] == FLAG || buf[i] == ESC_BYTE) {
       i++;
       destuffed[j] = buf[i] ^ 0x20;
-	  destuffedSize--;	
+	  destuffedSize--;
     }
     else {
       destuffed[j] = buf[i];
@@ -63,7 +61,7 @@ unsigned char* destuffing(unsigned char* buf, int* size) {
   }
 
 	for(i = (*size) - 1; i < (*size); i++)
-		{	
+		{
 		destuffed[j] = buf[i];
 		j++;
 		}

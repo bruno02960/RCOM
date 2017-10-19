@@ -3,7 +3,7 @@
 
 int writeControlPacket(int controlField, int fd);
 
-int writeDataPacket(char* buffer, int noBytes, int seqNo, int fd);
+int writeDataPacket(unsigned char* buffer, int noBytes, int seqNo, int fd);
 
 int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePath, int fd);
 

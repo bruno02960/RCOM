@@ -55,14 +55,14 @@ int linkLayerInit(char * port, int status) {
         receiveFile(fd);
         break;
       default:
-        exit(1); 
+        exit(1);
     }
 
    if(llclose(fd)) {
       printf("Error in llclose!\n");
       exit(1);
     }
-	
+
 	printf("File descriptor=%d\n", fd);
     closeSerialPort(fd);
 
@@ -92,7 +92,7 @@ int llopen(int fd) {
               }
           }
           stopAlarm(fd);
-          if (alarmCounter < NO_TRIES) 
+          if (alarmCounter < NO_TRIES)
               printf("Connection successfully done!\n");
           else {
               printf("Connection couldn't be done!\n");
@@ -119,18 +119,17 @@ int llopen(int fd) {
 
 int llwrite(unsigned char * buffer, int length, int fd) {
   int alarmCounter = 0;
-  int written = 0;
   FrameType frType;
 
   while (alarmCounter < NO_TRIES){
     if (alarmCounter == 0 || alarmFlag == 1) {
-      setAlarm();
+      setAlarm(fd);
       writeDataFrame(buffer, length, fd);
       alarmFlag = 0;
       alarmCounter++;
     }
 
-    receiveFrame(&frType, NULL, NULL, NULL);
+    receiveFrame(&frType, NULL, NULL, fd);
 
     printf("received[2]=%02x\n",linkL->frame[2]);
     printf("local[2]=%02x\n",((linkL->sequenceNumber<<5) | CTRL_RR));
@@ -140,10 +139,10 @@ int llwrite(unsigned char * buffer, int length, int fd) {
        stopAlarm(fd);
 	linkL->sequenceNumber=!linkL->sequenceNumber;
   break;
-      } 
+      }
    else if (linkL->frame[2] == (CTRL_REJ | (linkL->sequenceNumber<<5))) {
-      }  
-    } 
+      }
+    }
 
     if (alarmCounter < NO_TRIES) {
       printf("Written!\n");
@@ -162,7 +161,7 @@ int llread(unsigned char ** buffer, int fd) {
   FrameType frType = 0;
   FrameResponse fResp = 0;
 
-  while (disconnect == 0 && answered == 0) 
+  while (disconnect == 0 && answered == 0)
   {
 	printf("Not disconnected nor answered!\n");
     receiveFrame(&frType, &fResp, &fSize, fd);
@@ -170,7 +169,7 @@ int llread(unsigned char ** buffer, int fd) {
 	printf("frType=%d\n", frType);
 	printf("fResp=%d\n", fResp);
 
-    switch(frType) 
+    switch(frType)
 	{
       case COMMAND:
         if(linkL->frame[2] == CTRL_DISC)
@@ -179,7 +178,7 @@ int llread(unsigned char ** buffer, int fd) {
       case DATA:
 		printf("fResp=%d - RESP_RR=%d\n",fResp,RESP_RR);
 		printf("lL->sN=%02x - lL->frame=%02x\n",linkL->sequenceNumber,((linkL->frame[2]>>5) & BIT(0)));
-        if(fResp == RESP_RR && ((linkL->frame[2]>>5) & BIT(0)) == linkL->sequenceNumber) 
+        if(fResp == RESP_RR && ((linkL->frame[2]>>5) & BIT(0)) == linkL->sequenceNumber)
 		{
             writeCommand(RR, fd);
           linkL->sequenceNumber = !linkL->sequenceNumber;
@@ -187,16 +186,16 @@ int llread(unsigned char ** buffer, int fd) {
           *buffer = malloc(dataSize);
           memcpy(*buffer, &linkL->dataFrame[4], dataSize);
           answered = 1;
-        } 
+        }
         else
-          if (fResp == RESP_REJ) 
+          if (fResp == RESP_REJ)
 			{
             linkL->sequenceNumber = ((linkL->frame[2]>>5) & BIT(0));
             writeCommand(REJ, fd);
           	}
 		break;
       default:
-        return 1;  
+        return 1;
     }
 	printf("disconnect=%d\n", disconnect);
   }
@@ -206,19 +205,21 @@ int llread(unsigned char ** buffer, int fd) {
 
 int llclose(int fd) {
   int alarmCounter = 0;
-
+  FrameType frType=0;
+  int discReceived = 0;
+  
   switch (appL -> status) {
   case TRANSMITTER:
     while (alarmCounter < NO_TRIES) {
 
       if (alarmCounter == 0 || alarmFlag == 1) {
         setAlarm(fd);
-        writeCommand(SET, fd);
+        writeCommand(DISC, fd);
         alarmFlag = 0;
         alarmCounter++;
       }
 
-      receiveFrame(NULL, NULL, NULL, fd);
+      receiveFrame(&frType, NULL, NULL, fd);
 
       if (linkL->frame[2] == CTRL_DISC)
         writeCommand(UA, fd);
@@ -231,39 +232,51 @@ int llclose(int fd) {
       }
     stopAlarm(fd);
     break;
+    
   case RECEIVER:
-printf("HERE1!\n");
-printf("alarmCounter=%d\n", alarmCounter);
+		printf("HERE1!\n");
+		printf("alarmCounter=%d\n", alarmCounter);
     while (alarmCounter < NO_TRIES) {
+    
+	 receiveFrame(&frType, NULL, NULL, fd);
+	  printf("HERE2-c!\n");
 
-      if (alarmCounter == 0 || alarmFlag == 1) {
+      if (linkL->frame[2] == CTRL_DISC) {
+        printf("DISC RECEIVED!\n");
+        discReceived = 1;
+        }	
+		
+      if (discReceived && (alarmCounter == 0 || alarmFlag == 1)) {
         setAlarm(fd);
         writeCommand(DISC, fd);
         alarmFlag = 0;
         alarmCounter++;
-      }
+      } 
 
 printf("HERE2-a!\n");
-      receiveFrame(NULL, NULL, NULL, fd);
+      receiveFrame(&frType, NULL, NULL, fd);
 printf("HERE2-b!\n");
 
-      if (linkL->frame[2] == CTRL_UA)
-        printf("Disconnection successfully done!\n");
+      if (linkL->frame[2] == CTRL_UA) {
+        printf("Disconnection successfully done 1!\n");
+        break;
+        }
     }
 
     stopAlarm(fd);
     
-    if (alarmCounter < NO_TRIES)
-      printf("Disconnection successfully done!\n");
+    printf("alarmCounter=%d\n", alarmCounter);
+
+    if (alarmCounter < NO_TRIES) {
+      printf("Disconnection successfully done 2!\n");
+      return 0;
+      }
     else {
       printf("Disconnection couldn't be done!\n");
       return 1;
     }
-
-    break;
+    
   }
-
-printf("HERE3!\n");
 
   return 0;
 }
@@ -328,7 +341,7 @@ int writeCommand(Command command, int fd) {
 int sendFile(int fd) {
   unsigned char * packetBuffer = malloc(PACKET_SIZE * sizeof(unsigned char));
   int read, seqNo=0;
-  
+
   if(writeControlPacket(CTRL_START, fd)) {
     printf("Error on writing control packet in sendFile!\n");
     exit(1);
@@ -338,7 +351,7 @@ int sendFile(int fd) {
   }
 
   while((read=fread(packetBuffer, sizeof(unsigned char), PACKET_SIZE, traF->file)) > 0 ){
-  
+
     printf("seqNo sent=%d\n", (seqNo % 255));
     if(writeDataPacket(packetBuffer, read, (seqNo % 255), fd)) {    //seqNo is module 255
       printf("Error on writing data packet in sendFile!\n");
@@ -424,7 +437,7 @@ int writeDataFrame(unsigned char* data, unsigned int length, int fd) {
 
     memcpy(&frame[4], data, length);
 
-int counter = 0;  
+int counter = 0;
 
     for(dataInd = 0; dataInd < length; dataInd++) {
         bcc2 ^= data[dataInd];
@@ -434,7 +447,7 @@ int counter = 0;
     frame[4 + length] = bcc2;
     frame[5 + length] = FLAG;
 
-    frame = stuffing(frame, &size); 
+    frame = stuffing(frame, &size);
 
   int res = 0;
 
@@ -553,7 +566,6 @@ unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, 
 
       /* Is there necessity to check BCC1? */
 
-     printf("first data=%02x\n", linkL->frame[dataInd]);
 int counter = 0;
 
       for(dataInd = 4; dataInd < (size-2); dataInd++) {
@@ -580,9 +592,7 @@ counter++;
     memcpy(linkL->dataFrame, destuffed, size);
     }
 	printf("After evaluation!\n");
-	
+
 
 	return NULL;
 }
-
-
