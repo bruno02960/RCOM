@@ -13,19 +13,7 @@
 #include "transferFile.h"
 #include "handleFrames.h"
 
-#define NO_TRIES 3
-
 linkLayer_t * linkL;
-
-typedef enum {
-    START,
-    FLAG_RCV,
-    A_RCV,
-    C_RCV,
-    BCC_OK,
-    STOP
-}
-ReceivingState;
 
 int linkLayerInit(char * port, int status) {
     linkL = (linkLayer_t * ) malloc(sizeof(linkLayer_t));
@@ -185,7 +173,6 @@ int llread(unsigned char ** buffer, int fd) {
 
 int llclose(int fd) {
   int alarmCounter = 0;
-  FrameType frType=0;
   int discReceived = 0;
   
   switch (appL -> status) {

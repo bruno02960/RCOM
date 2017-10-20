@@ -1,4 +1,14 @@
 #include "handleFrames.h"
+#include "definitions.h"
+#include "linkLayer.h"
+#include "applicationLayer.h"
+#include "stuffing.h"
+#include "alarm.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <termios.h>
 
 int writeCommandFrame(Command command, int fd) {
     unsigned char buf[COMMAND_SIZE];
@@ -42,7 +52,6 @@ int writeCommandFrame(Command command, int fd) {
 	printf("appL->fileDescriptor=%d\n", fd);
     if ((res=write(fd, &buf, 5)) != sizeof(buf)) {
         printf("Error on writting!\n");
-    printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
         return -1;
     }
 	else {
@@ -95,9 +104,9 @@ int counter = 0;
     return 0;
 }
 
-unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, int fd) {
+unsigned char* receiveFrame(FrameResponse *fResp, int *fSize, int fd) {
     unsigned char c;
-    int res, ind=0;
+    int res, ind=0, dataType=0;
     ReceivingState rState=0;
 
     while (alarmFlag != 1 && rState!=STOP) {
@@ -158,7 +167,7 @@ unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, 
                     rState++;
 
                     if(ind > 5)
-                        (*fType) = DATA;
+                        dataType=1;
                 }
                 else
                     linkL->frame[ind++] = c;
@@ -171,7 +180,7 @@ unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, 
         }
     }
 
-    if((*fType) == DATA) {
+    if(dataType==1) {
       unsigned char bcc2 = 0;
       int dataInd;
 

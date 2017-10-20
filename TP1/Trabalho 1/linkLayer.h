@@ -8,23 +8,8 @@ typedef struct {
 	unsigned int timeout;			/*Valor do temporizador: 1 s*/
 	unsigned int numTransmissions;	/*Número de tentativas em caso de falha*/
 	unsigned char frame[PACKET_SIZE];   		/*Trama*/
-    unsigned char dataFrame[PACKET_SIZE];           /*Trama*/
+    	unsigned char dataFrame[PACKET_SIZE];           /*Trama de dados*/
 } linkLayer_t;
-
-typedef enum {
-    RESP_RR,
-    RESP_REJ
-}
-FrameResponse;
-
-typedef enum {
-    SET,
-    DISC,
-    UA,
-    RR,
-    REJ
-}
-Command;
 
 extern linkLayer_t* linkL;
 
