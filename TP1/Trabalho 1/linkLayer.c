@@ -154,24 +154,13 @@ return 1;
 }
 
 int llread(unsigned char ** buffer, int fd) {
-  int read = 0, disconnect = 0, fSize, dataSize, answered = 0;
+  int read = 0, fSize, dataSize, answered = 0;
   FrameResponse fResp = 0;
 
-  while (disconnect == 0 && answered == 0)
+  while (answered == 0)
   {
-	printf("Not disconnected nor answered!\n");
     receiveFrame(&fResp, &fSize, fd);
 
-	printf("frType=%d\n", frType);
-	printf("fResp=%d\n", fResp);
-
-    switch(frType)
-	{
-      case COMMAND:
-        if(linkL->frame[2] == CTRL_DISC)
-          disconnect = 1;
-        break;
-      case DATA:
 		printf("fResp=%d - RESP_RR=%d\n",fResp,RESP_RR);
 		printf("lL->sN=%02x - lL->frame=%02x\n",linkL->sequenceNumber,((linkL->frame[2]>>5) & BIT(0)));
         if(fResp == RESP_RR && ((linkL->frame[2]>>5) & BIT(0)) == linkL->sequenceNumber)
@@ -189,11 +178,6 @@ int llread(unsigned char ** buffer, int fd) {
             linkL->sequenceNumber = ((linkL->frame[2]>>5) & BIT(0));
             writeCommandFrame(REJ, fd);
           	}
-		break;
-      default:
-        return 1;
-    }
-	printf("disconnect=%d\n", disconnect);
   }
 
   return read;
