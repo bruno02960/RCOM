@@ -72,7 +72,6 @@ int linkLayerInit(char * port, int status) {
 
 int llopen(int fd) {
     int alarmCounter = 0;
-    FrameType frType;
 
     switch (appL->status) {
       case TRANSMITTER:
@@ -84,7 +83,7 @@ int llopen(int fd) {
                   alarmCounter++;
               }
 
-              receiveFrame(&frType, NULL, NULL, fd);
+              receiveFrame(NULL, NULL, fd);
 
               if (linkL->frame[2] == CTRL_UA) {
                   printf("UA received!\n");
@@ -101,7 +100,7 @@ int llopen(int fd) {
           break;
 
       case RECEIVER:
-          receiveFrame(&frType, NULL, NULL, fd);
+          receiveFrame(NULL, NULL, fd);
 
           if (linkL->frame[2] == CTRL_SET) {
               writeCommandFrame(UA, fd);
@@ -119,7 +118,6 @@ int llopen(int fd) {
 
 int llwrite(unsigned char * buffer, int length, int fd) {
   int alarmCounter = 0;
-  FrameType frType;
 
   while (alarmCounter < NO_TRIES){
     if (alarmCounter == 0 || alarmFlag == 1) {
@@ -129,7 +127,7 @@ int llwrite(unsigned char * buffer, int length, int fd) {
       alarmCounter++;
     }
 
-    receiveFrame(&frType, NULL, NULL, fd);
+    receiveFrame(NULL, NULL, fd);
 
     printf("received[2]=%02x\n",linkL->frame[2]);
     printf("local[2]=%02x\n",((linkL->sequenceNumber<<5) | CTRL_RR));
@@ -157,13 +155,12 @@ return 1;
 
 int llread(unsigned char ** buffer, int fd) {
   int read = 0, disconnect = 0, fSize, dataSize, answered = 0;
-  FrameType frType = 0;
   FrameResponse fResp = 0;
 
   while (disconnect == 0 && answered == 0)
   {
 	printf("Not disconnected nor answered!\n");
-    receiveFrame(&frType, &fResp, &fSize, fd);
+    receiveFrame(&fResp, &fSize, fd);
 
 	printf("frType=%d\n", frType);
 	printf("fResp=%d\n", fResp);
@@ -218,7 +215,7 @@ int llclose(int fd) {
         alarmCounter++;
       }
 
-      receiveFrame(&frType, NULL, NULL, fd);
+      receiveFrame(NULL, NULL, fd);
 
       if (linkL->frame[2] == CTRL_DISC) {
         writeCommandFrame(UA, fd);
@@ -243,7 +240,7 @@ int llclose(int fd) {
 		printf("alarmCounter=%d\n", alarmCounter);
     while (alarmCounter < NO_TRIES) {
     
-	 receiveFrame(&frType, NULL, NULL, fd);
+	 receiveFrame(NULL, NULL, fd);
 	  printf("HERE2-c!\n");
 
       if (linkL->frame[2] == CTRL_DISC) {
@@ -259,7 +256,7 @@ int llclose(int fd) {
       } 
 
 printf("HERE2-a!\n");
-      receiveFrame(&frType, NULL, NULL, fd);
+      receiveFrame(NULL, NULL, fd);
 printf("HERE2-b!\n");
 
       if (linkL->frame[2] == CTRL_UA) {
