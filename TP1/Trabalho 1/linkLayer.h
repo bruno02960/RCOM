@@ -11,13 +11,6 @@ typedef struct {
     unsigned char dataFrame[PACKET_SIZE];           /*Trama*/
 } linkLayer_t;
 
-
-typedef enum {
-    COMMAND,
-    DATA
-}
-FrameType;
-
 typedef enum {
     RESP_RR,
     RESP_REJ

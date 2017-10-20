@@ -2,6 +2,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <errno.h>
 #include "alarm.h"
 #include "definitions.h"
 #include "configs.h"
@@ -10,7 +11,7 @@
 #include "linkLayer.h"
 #include "applicationLayer.h"
 #include "transferFile.h"
-#include <errno.h>
+#include "handleFrames.h"
 
 #define NO_TRIES 3
 
@@ -78,7 +79,7 @@ int llopen(int fd) {
           while (alarmCounter < NO_TRIES) {
               if (alarmCounter == 0 || alarmFlag == 1) {
                   setAlarm(fd);
-                  writeCommand(SET, fd);
+                  writeCommandFrame(SET, fd);
                   alarmFlag = 0;
                   alarmCounter++;
               }
@@ -103,7 +104,7 @@ int llopen(int fd) {
           receiveFrame(&frType, NULL, NULL, fd);
 
           if (linkL->frame[2] == CTRL_SET) {
-              writeCommand(UA, fd);
+              writeCommandFrame(UA, fd);
               printf("Connection successfully done!\n");
           }
           else {
@@ -178,7 +179,7 @@ int llread(unsigned char ** buffer, int fd) {
 		printf("lL->sN=%02x - lL->frame=%02x\n",linkL->sequenceNumber,((linkL->frame[2]>>5) & BIT(0)));
         if(fResp == RESP_RR && ((linkL->frame[2]>>5) & BIT(0)) == linkL->sequenceNumber)
 		{
-            writeCommand(RR, fd);
+            writeCommandFrame(RR, fd);
           linkL->sequenceNumber = !linkL->sequenceNumber;
           dataSize = fSize - DATA_SIZE;
           *buffer = malloc(dataSize);
@@ -189,7 +190,7 @@ int llread(unsigned char ** buffer, int fd) {
           if (fResp == RESP_REJ)
 			{
             linkL->sequenceNumber = ((linkL->frame[2]>>5) & BIT(0));
-            writeCommand(REJ, fd);
+            writeCommandFrame(REJ, fd);
           	}
 		break;
       default:
@@ -212,7 +213,7 @@ int llclose(int fd) {
 
       if (alarmCounter == 0 || alarmFlag == 1) {
         setAlarm(fd);
-        writeCommand(DISC, fd);
+        writeCommandFrame(DISC, fd);
         alarmFlag = 0;
         alarmCounter++;
       }
@@ -220,7 +221,7 @@ int llclose(int fd) {
       receiveFrame(&frType, NULL, NULL, fd);
 
       if (linkL->frame[2] == CTRL_DISC) {
-        writeCommand(UA, fd);
+        writeCommandFrame(UA, fd);
         break;
         }
     }
@@ -252,7 +253,7 @@ int llclose(int fd) {
 		
       if (discReceived && (alarmCounter == 0 || alarmFlag == 1)) {
         setAlarm(fd);
-        writeCommand(DISC, fd);
+        writeCommandFrame(DISC, fd);
         alarmFlag = 0;
         alarmCounter++;
       } 
@@ -283,63 +284,6 @@ printf("HERE2-b!\n");
   }
 
   return 0;
-}
-
-
-
-int writeCommand(Command command, int fd) {
-    unsigned char buf[COMMAND_SIZE];
-
-	printf("Preparing to write %d\n", command);
-
-    buf[0] = FLAG;
-
-//  if (appL->status == TRANSMITTER)
-    buf[1] = ADDR_S;
-    /*  else
-        buf[1] = ADDR_R;*/
-
-    switch (command) {
-    case SET:
-        buf[2] = CTRL_SET;
-        break;
-    case DISC:
-        buf[2] = CTRL_DISC;
-        break;
-    case UA:
-        buf[2] = CTRL_UA;
-        break;
-    case RR:
-        buf[2] = CTRL_RR | (linkL->sequenceNumber<<5);
-        break;
-    case REJ:
-        buf[2] = CTRL_REJ | (linkL->sequenceNumber<<5);
-        break;
-    default:
-        break;
-    }
-    buf[3] = buf[1] ^ buf[2];
-
-    buf[4] = FLAG;
-
-    tcflush(appL->fileDescriptor, TCOFLUSH);
-
-	int res;
-
-	printf("appL->fileDescriptor=%d\n", fd);
-    if ((res=write(fd, &buf, 5)) != sizeof(buf)) {
-        printf("Error on writting!\n");
-    printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
-        return -1;
-    }
-	else {
-	printf("Command successfully written!\n");
-}
-
-    /* What's the adress byte? */
-    /* What's RR & REJ BCC ? */
-    return 0;
-
 }
 
 int sendFile(int fd) {
@@ -424,156 +368,4 @@ int receiveFile(int fd) {
 	}
 
   return 0;
-}
-
-
-int writeDataFrame(unsigned char* data, unsigned int length, int fd) {
-    unsigned char *frame = malloc(1024);
-    int size = length + DATA_SIZE;
-    unsigned char bcc2 = 0;
-    int dataInd = 0;
-
-
-    frame[0] = FLAG;
-    frame[1] = ADDR_S;
-    frame[2] = linkL->sequenceNumber << 5;
-    frame[3] = frame[1] ^ frame[2];
-
-    memcpy(&frame[4], data, length);
-
-int counter = 0;
-
-    for(dataInd = 0; dataInd < length; dataInd++) {
-        bcc2 ^= data[dataInd];
-		counter++;
-    }
-
-    frame[4 + length] = bcc2;
-    frame[5 + length] = FLAG;
-
-    frame = stuffing(frame, &size);
-
-  int res = 0;
-
-    if((res=write(fd, frame, size)) != size) {
-      printf("Error on writing data frame!\n");
-      exit(1);
-    }
-    else {
-  printf("%d bytes written!\n", res);
-  }
-
-
-    return 0;
-}
-
-unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, int fd) {
-    unsigned char c;
-    int res, ind=0;
-    ReceivingState rState=0;
-
-    while (alarmFlag != 1 && rState!=STOP) {
-        res = read(fd, &c, 1);
-
-        if (res > 0) {
-
-            switch(rState) {
-            case START:
-                if (c == FLAG) {
-                    linkL->frame[ind++]=c;
-                    rState++;
-                }
-                break;
-            case FLAG_RCV:
-                if (c == ADDR_S || c == ADDR_R) {
-                    linkL->frame[ind++]=c;
-                    rState++;
-                }
-                else if (c!=FLAG) {
-                    rState = START;
-                    ind = 0;
-                }
-                break;
-            case A_RCV:
-                if (c != FLAG) {
-                    linkL->frame[ind++]=c;
-                    rState++;
-                }
-                else if (c==FLAG) {
-                    rState = FLAG_RCV;
-                    ind = 1;
-                }
-                else {
-                    rState=START;
-                    ind = 0;
-                }
-                break;
-            case C_RCV:
-                if (c == (linkL->frame[1]^linkL->frame[2])) {
-                    linkL->frame[ind++]=c;
-                    rState++;
-                }
-                else {
-                    if (c==FLAG) {
-                        rState = FLAG_RCV;
-                        ind = 1;
-                    }
-                    else {
-                        rState = START;
-                        ind = 0;
-                    }
-                }
-                break;
-            case BCC_OK:
-                if (c == FLAG) {
-                    linkL->frame[ind++]=c;
-                    rState++;
-
-                    if(ind > 5)
-                        (*fType) = DATA;
-                }
-                else
-                    linkL->frame[ind++] = c;
-                break;
-            case STOP:
-                break;
-            default:
-                break;
-            }
-        }
-    }
-
-    if((*fType) == DATA) {
-      unsigned char bcc2 = 0;
-      int dataInd;
-
-      int size = ind;
-
-	unsigned char * destuffed;
-
-	destuffed=destuffing(linkL->frame, &size);
-
-      strcpy((char*)linkL->frame, (char*)destuffed);
-
-int counter = 0;
-
-      for(dataInd = 4; dataInd < (size-2); dataInd++) {
-        bcc2 ^= destuffed[dataInd];
-counter++;
-      }
-
-      if(destuffed[size - 2] != bcc2) {
-        printf("Error on BCC2!\n");
-        (*fResp) = RESP_REJ;
-      }
-
-      if(*fResp == 0)
-        (*fResp) = RESP_RR;
-
-    (*fSize) = ind;
-    memcpy(linkL->dataFrame, destuffed, size);
-    }
-
-
-	return NULL;
 }
