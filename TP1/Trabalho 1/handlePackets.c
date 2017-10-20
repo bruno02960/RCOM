@@ -7,21 +7,21 @@
 
 int writeControlPacket(int controlField, int fd) {
     unsigned char fileSize[14];  /* 10.7KB = 10 700B | log2(10 700)~=14 */
-    sprintf(fileSize, "%d", traF->fileSize);
+    sprintf((char*)fileSize, "%d", traF->fileSize);
 
-    int ctrlPkSize = 5 + strlen(fileSize) + strlen(FILE_PATH); /* 5 bytes
+    int ctrlPkSize = 5 + strlen((char*)fileSize) + strlen(FILE_PATH); /* 5 bytes
     from C, T1, L1, T2 and L2 */
 
     unsigned char controlPacket[ctrlPkSize];
 
     controlPacket[0] = controlField + '0';
     controlPacket[1] = FILE_SIZE + '0';
-    controlPacket[2] = strlen(fileSize) + '0';
+    controlPacket[2] = strlen((char*)fileSize) + '0';
 
     int index = 3;
     int k;
 
-    for(k = 0; k < strlen(fileSize); k++, index++)
+    for(k = 0; k < strlen((char*)fileSize); k++, index++)
       controlPacket[index] = fileSize[k];
 
     controlPacket[index++] = FILE_NAME + '0';
@@ -88,7 +88,7 @@ int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePat
       fileSize[i] = controlPacket[valueIndex++];
 
     fileSize[valueIndex - 3] = '\0';
-    (*noBytes) = atoi(fileSize);
+    (*noBytes) = atoi((char*)fileSize);
 
 	printf("noBytes=%d\n",(*noBytes));
 
@@ -106,7 +106,7 @@ int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePat
 	printf("path=%s!\n", path);
 
 	printf("Before strcpy!\n");
-    strcpy((*filePath), path);
+    strcpy((char*)(*filePath), (char*)path);
 	printf("After strcpy!\n");
 
     return 0;

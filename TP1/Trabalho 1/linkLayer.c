@@ -568,7 +568,7 @@ unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, 
 
 	//size = ind - DATA_SIZE;
 
-      strcpy(linkL->frame, destuffed);
+      strcpy((char*)linkL->frame, (char*)destuffed);
 
       /* Is there necessity to check BCC1? */
 
