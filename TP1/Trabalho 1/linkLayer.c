@@ -35,7 +35,6 @@ int linkLayerInit(char * port, int status) {
     linkL->baudRate = BAUDRATE;                   /*Velocidade de transmissão*/
     linkL->sequenceNumber = 0;                    /*Número de sequência da trama: 0, 1*/
     linkL->numTransmissions = NUM_TRANSMISSIONS;  /*Número de tentativas em caso de falha*/
-    //linkL->frame[MAX_SIZE];                     /*Trama */
 
     applicationLayerInit(status);
 	int fd = appL->fileDescriptor;
@@ -135,7 +134,6 @@ int llwrite(unsigned char * buffer, int length, int fd) {
     printf("local[2]=%02x\n",((linkL->sequenceNumber<<5) | CTRL_RR));
 
     if (linkL->frame[2] == (CTRL_RR | (linkL->sequenceNumber<<5))) {
-   //printf("RR received\n");
        stopAlarm(fd);
 	linkL->sequenceNumber=!linkL->sequenceNumber;
   break;
@@ -482,9 +480,7 @@ unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, 
             switch(rState) {
             case START:
                 if (c == FLAG) {
-					printf("HERE!\n");
                     linkL->frame[ind++]=c;
-					printf("HERE!\n");
                     rState++;
                 }
                 break;
@@ -532,7 +528,6 @@ unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, 
                 if (c == FLAG) {
                     linkL->frame[ind++]=c;
                     rState++;
-	printf("rState=%d!\n", rState);
 
                     if(ind > 5)
                         (*fType) = DATA;
@@ -548,29 +543,17 @@ unsigned char* receiveFrame(FrameType *fType, FrameResponse *fResp, int *fSize, 
         }
     }
 
-	printf("Before evaluation!\n");
-
     if((*fType) == DATA) {
       unsigned char bcc2 = 0;
       int dataInd;
 
       int size = ind;
 
-	/*int i=0;
-
-	for(i=4; i<ind; i++) {
-		printf("linkL->frame[%i]=%02x\n", i, linkL->frame[i]);
-	}*/
-
 	unsigned char * destuffed;
 
 	destuffed=destuffing(linkL->frame, &size);
 
-	//size = ind - DATA_SIZE;
-
       strcpy((char*)linkL->frame, (char*)destuffed);
-
-      /* Is there necessity to check BCC1? */
 
 int counter = 0;
 
@@ -578,13 +561,6 @@ int counter = 0;
         bcc2 ^= destuffed[dataInd];
 counter++;
       }
-
-	printf("bcc2 used %d bytes\n",counter);
-
-	  printf("last data %02x\n", linkL->frame[dataInd-1]);
-	  printf("bcc2=%02x\n",bcc2);
-
-	printf("4 + size = %d\n",(4+size));
 
       if(destuffed[size - 2] != bcc2) {
         printf("Error on BCC2!\n");
@@ -597,7 +573,6 @@ counter++;
     (*fSize) = ind;
     memcpy(linkL->dataFrame, destuffed, size);
     }
-	printf("After evaluation!\n");
 
 
 	return NULL;

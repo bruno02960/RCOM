@@ -8,26 +8,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "linkLayer.h"
-
+/**
+	* Verifies command line arguments and begins program
+*/
 int main(int argc, char** argv) {
-	/* Args handling */
-
-	/* Init:
-		- status;
-		- port;
-		- numTransmissions;
-		- timeout;
-		- baudrate;
-		- filename? packetSize?
-		*/	
-
-	// reads config file and saves shit on linklayer
-
-	//main args are port and status
-
- 	//receiver or transmitter?
-	//0 -> T
-	//1-> R
 
 	if ( (argc < 3) || 
 		((strcmp("/dev/ttyS0", argv[1])!=0) && 

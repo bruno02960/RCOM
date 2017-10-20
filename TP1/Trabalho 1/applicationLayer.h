@@ -13,9 +13,17 @@ typedef struct {
 extern applicationLayer_t* appL;
 
 /**
-	Initiates an application layer struct
+	* Initiates an application layer struct
 */
 int applicationLayerInit(int status);
 
+/**
+	* Closes serial port
+	@param fd Serial Port's file descriptor
+*/
 int closeSerialPort(int fd);
+
+/**
+	* Sets a new termios struct
+*/
 int saveAndSetTermios();

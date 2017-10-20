@@ -20,9 +20,12 @@ void setVMIN (int noChars) {
 		exit(-1);
 	}
 
-  	oldtio.c_cc[VMIN]     = noChars;   /* blocking read until 5 chars received */
+  	oldtio.c_cc[VMIN] = noChars;   
 
-	tcflush(appL->fileDescriptor, TCIFLUSH);
+	if ( tcflush(appL->fileDescriptor, TCIFLUSH) == -1) {
+		perror("tcflush");
+		exit(-1);
+	}
 
 	if ( tcsetattr(appL->fileDescriptor,TCSANOW,&oldtio) == -1) 
 	{
@@ -34,6 +37,7 @@ void setVMIN (int noChars) {
 void alarmHandler()
 {
 	printf("Alarm!\n");
+	
 	alarmFlag = 1;
 
 	setVMIN(0);
