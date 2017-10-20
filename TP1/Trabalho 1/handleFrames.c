@@ -13,8 +13,6 @@
 int writeCommandFrame(Command command, int fd) {
     unsigned char buf[COMMAND_SIZE];
 
-	printf("Preparing to write %d\n", command);
-
     buf[0] = FLAG;
 
 //  if (appL->status == TRANSMITTER)
@@ -49,14 +47,10 @@ int writeCommandFrame(Command command, int fd) {
 
 	int res;
 
-	printf("appL->fileDescriptor=%d\n", fd);
     if ((res=write(fd, &buf, 5)) != sizeof(buf)) {
         printf("Error on writting!\n");
         return -1;
     }
-	else {
-	printf("Command successfully written!\n");
-}
 
     /* What's the adress byte? */
     /* What's RR & REJ BCC ? */
@@ -96,9 +90,6 @@ int counter = 0;
       printf("Error on writing data frame!\n");
       exit(1);
     }
-    else {
-  printf("%d bytes written!\n", res);
-  }
 
 
     return 0;

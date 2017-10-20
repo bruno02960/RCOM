@@ -34,9 +34,6 @@ int writeControlPacket(int controlField, int fd) {
       printf("Error on llwrite!\n");
       return 1;
     }
-    else {
-      printf("ControlPacket successfully written!\n");
-    }
 
     return 0;
 }
@@ -103,11 +100,7 @@ int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePat
 
     path[i] = '\0';
 
-	printf("path=%s!\n", path);
-
-	printf("Before strcpy!\n");
     strcpy((char*)(*filePath), (char*)path);
-	printf("After strcpy!\n");
 
     return 0;
 }
@@ -120,8 +113,6 @@ int receiveDataPacket(unsigned char ** buffer, int sequenceNumber, int fd) {
       printf("Error on receiving data packet at llread()!\n");
       exit(1);
     }
-
-	printf("HERE at receiveDataPacket!\n");
 
     int controlField = dataPacket[0] - '0';
     int seqNo = dataPacket[1] - '0';

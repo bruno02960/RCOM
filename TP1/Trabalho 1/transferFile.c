@@ -29,6 +29,8 @@ int transferFileInit(int status) {
         exit(1);
     }
 
+	printf("Transfer file successfully opened!\n");
+
     return 0;
 }
 
@@ -37,4 +39,6 @@ void transferFileClose() {
 		printf("Unable to close transfer file!\n");
 		exit(1);
 	}
+
+	printf("Transfer file successfully closed!\n");
 }

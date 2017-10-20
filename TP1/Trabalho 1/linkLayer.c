@@ -51,7 +51,6 @@ int linkLayerInit(char * port, int status) {
       exit(1);
     }
 
-	printf("File descriptor=%d\n", fd);
     closeSerialPort(fd);
 
     return 0;
@@ -74,7 +73,6 @@ int llopen(int fd) {
               receiveFrame(NULL, NULL, fd);
 
               if (linkL->frame[2] == CTRL_UA) {
-                  printf("UA received!\n");
                   break;
               }
           }
@@ -117,9 +115,6 @@ int llwrite(unsigned char * buffer, int length, int fd) {
 
     receiveFrame(NULL, NULL, fd);
 
-    printf("received[2]=%02x\n",linkL->frame[2]);
-    printf("local[2]=%02x\n",((linkL->sequenceNumber<<5) | CTRL_RR));
-
     if (linkL->frame[2] == (CTRL_RR | (linkL->sequenceNumber<<5))) {
        stopAlarm(fd);
 	linkL->sequenceNumber=!linkL->sequenceNumber;
@@ -130,8 +125,7 @@ int llwrite(unsigned char * buffer, int length, int fd) {
     }
 
     if (alarmCounter < NO_TRIES) {
-      printf("Written!\n");
-return 0;
+	return 0;
 	}
     else {
       printf("Couldn't write!\n");
@@ -207,15 +201,11 @@ int llclose(int fd) {
     break;
     
   case RECEIVER:
-		printf("HERE1!\n");
-		printf("alarmCounter=%d\n", alarmCounter);
     while (alarmCounter < NO_TRIES) {
     
 	 receiveFrame(NULL, NULL, fd);
-	  printf("HERE2-c!\n");
 
       if (linkL->frame[2] == CTRL_DISC) {
-        printf("DISC RECEIVED!\n");
         discReceived = 1;
         }	
 		
@@ -226,9 +216,7 @@ int llclose(int fd) {
         alarmCounter++;
       } 
 
-printf("HERE2-a!\n");
       receiveFrame(NULL, NULL, fd);
-printf("HERE2-b!\n");
 
       if (linkL->frame[2] == CTRL_UA) {
         printf("Disconnection successfully done 1!\n");
@@ -283,6 +271,9 @@ int sendFile(int fd) {
     printf("Error on writing control packet in sendFile!\n");
     exit(1);
   }
+	else {
+	printf("End control packet successfully written!\n");
+	}
 
   return 0;
 }

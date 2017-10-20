@@ -25,6 +25,9 @@ int applicationLayerInit(int status) {
 		printf("Error on oppening serial port!\n");
 		exit(1);
 	}
+	else {
+		printf("Serial port successfully opened!\n");
+	}
 
 	appL->status = status;
 
