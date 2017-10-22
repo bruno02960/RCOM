@@ -26,13 +26,6 @@ unsigned char* stuffing(unsigned char* buf, int* size) {
 
 (*size)=stuffedSize;
 
-
-  /*int k;
-
-      for(k = 0; k < stuffedSize; k++) {
-        printf("stuffed[%d]=%02x\n",k,stuffed[k]);
-      }*/
-
   return stuffed;
 }
 
@@ -67,11 +60,6 @@ unsigned char* destuffing(unsigned char* buf, int* size) {
 		}
 
 	(*size) = destuffedSize;
-
-	/*int k = 0;
-	for(k=0 ; k<destuffedSize; k++) {
-		printf("destuffed[%d]=%02x\n", k, destuffed[k]);
-	}*/
-
+  
   return destuffed;
 }

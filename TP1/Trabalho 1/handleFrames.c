@@ -10,17 +10,13 @@
 #include <unistd.h>
 #include <termios.h>
 
-int writeCommandFrame(Command command, int fd) {
+int writeNonDataFrame(Frame frame, int fd) {
     unsigned char buf[COMMAND_SIZE];
 
     buf[0] = FLAG;
-
-//  if (appL->status == TRANSMITTER)
     buf[1] = ADDR_S;
-    /*  else
-        buf[1] = ADDR_R;*/
 
-    switch (command) {
+    switch (frame) {
     case SET:
         buf[2] = CTRL_SET;
         break;
@@ -52,8 +48,6 @@ int writeCommandFrame(Command command, int fd) {
         return -1;
     }
 
-    /* What's the adress byte? */
-    /* What's RR & REJ BCC ? */
     return 0;
 
 }

@@ -15,7 +15,7 @@ int transferFileInit(int status) {
             printf("Unable to open file!\n");
             exit(1);
         }
-        
+
         if(stat(FILE_PATH,&st)==0)
             traF->fileSize = st.st_size;
         else
@@ -29,7 +29,7 @@ int transferFileInit(int status) {
         exit(1);
     }
 
-	printf("Transfer file successfully opened!\n");
+	printf("Transfer file opened!\n");
 
     return 0;
 }
@@ -40,5 +40,5 @@ void transferFileClose() {
 		exit(1);
 	}
 
-	printf("Transfer file successfully closed!\n");
+	printf("Transfer file closed!\n");
 }

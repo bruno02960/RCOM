@@ -26,7 +26,7 @@ int applicationLayerInit(int status) {
 		exit(1);
 	}
 	else {
-		printf("Serial port successfully opened!\n");
+		printf("Serial port opened!\n");
 	}
 
 	appL->status = status;
@@ -52,7 +52,7 @@ int saveAndSetTermios() {
 	newtio.c_lflag = 0;
 
 	newtio.c_cc[VTIME] = 0;		/* inter-character timer unused */
-	newtio.c_cc[VMIN] = 1;		/* blocking read until 5 chars received */
+	newtio.c_cc[VMIN] = 1;		/* blocking read until a char is received */
 
 	if (tcflush(appL->fileDescriptor, TCIFLUSH) == -1) {
 	    perror("tcflush");

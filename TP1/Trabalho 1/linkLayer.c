@@ -65,7 +65,7 @@ int llopen(int fd) {
           while (alarmCounter < NO_TRIES) {
               if (alarmCounter == 0 || alarmFlag == 1) {
                   setAlarm(fd);
-                  writeCommandFrame(SET, fd);
+                  writeNonDataFrame(SET, fd);
                   alarmFlag = 0;
                   alarmCounter++;
               }
@@ -78,7 +78,7 @@ int llopen(int fd) {
           }
           stopAlarm(fd);
           if (alarmCounter < NO_TRIES)
-              printf("Connection successfully done!\n");
+              printf("Connection done!\n");
           else {
               printf("Connection couldn't be done!\n");
               return 1;
@@ -89,8 +89,8 @@ int llopen(int fd) {
           receiveFrame(NULL, NULL, fd);
 
           if (linkL->frame[2] == CTRL_SET) {
-              writeCommandFrame(UA, fd);
-              printf("Connection successfully done!\n");
+              writeNonDataFrame(UA, fd);
+              printf("Connection done!\n");
           }
           else {
               printf("Connection couldn't be done!\n");
@@ -143,11 +143,9 @@ int llread(unsigned char ** buffer, int fd) {
   {
     receiveFrame(&fResp, &fSize, fd);
 
-		printf("fResp=%d - RESP_RR=%d\n",fResp,RESP_RR);
-		printf("lL->sN=%02x - lL->frame=%02x\n",linkL->sequenceNumber,((linkL->frame[2]>>5) & BIT(0)));
-        if(fResp == RESP_RR && ((linkL->frame[2]>>5) & BIT(0)) == linkL->sequenceNumber)
+		if(fResp == RESP_RR && ((linkL->frame[2]>>5) & BIT(0)) == linkL->sequenceNumber)
 		{
-            writeCommandFrame(RR, fd);
+            writeNonDataFrame(RR, fd);
           linkL->sequenceNumber = !linkL->sequenceNumber;
           dataSize = fSize - DATA_SIZE;
           *buffer = malloc(dataSize);
@@ -158,7 +156,7 @@ int llread(unsigned char ** buffer, int fd) {
           if (fResp == RESP_REJ)
 			{
             linkL->sequenceNumber = ((linkL->frame[2]>>5) & BIT(0));
-            writeCommandFrame(REJ, fd);
+            writeNonDataFrame(REJ, fd);
           	}
   }
 
@@ -168,14 +166,14 @@ int llread(unsigned char ** buffer, int fd) {
 int llclose(int fd) {
   int alarmCounter = 0;
   int discReceived = 0;
-  
+
   switch (appL -> status) {
   case TRANSMITTER:
     while (alarmCounter < NO_TRIES) {
 
       if (alarmCounter == 0 || alarmFlag == 1) {
         setAlarm(fd);
-        writeCommandFrame(DISC, fd);
+        writeNonDataFrame(DISC, fd);
         alarmFlag = 0;
         alarmCounter++;
       }
@@ -183,15 +181,15 @@ int llclose(int fd) {
       receiveFrame(NULL, NULL, fd);
 
       if (linkL->frame[2] == CTRL_DISC) {
-        writeCommandFrame(UA, fd);
+        writeNonDataFrame(UA, fd);
         break;
         }
     }
-    
+
     stopAlarm(fd);
-    
+
       if (alarmCounter < NO_TRIES) {
-        printf("Disconnection successfully done!\n");
+        printf("Disconnection done!\n");
         return 0;
        }
       else {
@@ -199,44 +197,41 @@ int llclose(int fd) {
         return 1;
       }
     break;
-    
+
   case RECEIVER:
     while (alarmCounter < NO_TRIES) {
-    
+
 	 receiveFrame(NULL, NULL, fd);
 
       if (linkL->frame[2] == CTRL_DISC) {
         discReceived = 1;
-        }	
-		
+        }
+
       if (discReceived && (alarmCounter == 0 || alarmFlag == 1)) {
         setAlarm(fd);
-        writeCommandFrame(DISC, fd);
+        writeNonDataFrame(DISC, fd);
         alarmFlag = 0;
         alarmCounter++;
-      } 
+      }
 
       receiveFrame(NULL, NULL, fd);
 
       if (linkL->frame[2] == CTRL_UA) {
-        printf("Disconnection successfully done 1!\n");
         break;
         }
     }
 
     stopAlarm(fd);
-    
-    printf("alarmCounter=%d\n", alarmCounter);
 
     if (alarmCounter < NO_TRIES) {
-      printf("Disconnection successfully done 2!\n");
+      printf("Disconnection done!\n");
       return 0;
       }
     else {
       printf("Disconnection couldn't be done!\n");
       return 1;
     }
-    
+
   }
 
   return 0;
@@ -244,23 +239,28 @@ int llclose(int fd) {
 
 int sendFile(int fd) {
   unsigned char * packetBuffer = malloc(PACKET_SIZE * sizeof(unsigned char));
-  int read, seqNo=0;
+  int read, seqNo=0, noBytes=0;
 
   if(writeControlPacket(CTRL_START, fd)) {
     printf("Error on writing control packet in sendFile!\n");
     exit(1);
   }
   else {
-    printf("Start control packet successfully written!\n");
+    printf("Start control packet written!\n\n");
   }
 
   while((read=fread(packetBuffer, sizeof(unsigned char), PACKET_SIZE, traF->file)) > 0 ){
+    printf("%d bytes read from file!\n",read);
 
-    printf("seqNo sent=%d\n", (seqNo % 255));
     if(writeDataPacket(packetBuffer, read, (seqNo % 255), fd)) {    //seqNo is module 255
       printf("Error on writing data packet in sendFile!\n");
       exit(1);
     }
+
+    noBytes+=read;
+
+    printf("Bytes accumulated=%d\n", noBytes);
+    printf("seqNo sent=%d\n\n", (seqNo % 255));
 
     seqNo++;
   }
@@ -272,7 +272,7 @@ int sendFile(int fd) {
     exit(1);
   }
 	else {
-	printf("End control packet successfully written!\n");
+	printf("End control packet written!\n");
 	}
 
   return 0;
@@ -288,25 +288,22 @@ int receiveFile(int fd) {
     exit(1);
   }
   else {
-	printf("Control packet received!\n");
+	printf("Star control packet received!\n\n");
   }
 
   int read, noBytes = 0, seqNo = 0, written = 0;
   unsigned char * buffer = malloc(PACKET_SIZE * sizeof(char));
 
-	printf("Preparing to receive data packet...\n");
-	printf("File size=%d\n",fileSize);
-
   while(noBytes < fileSize) {
-  	printf("seqNo expected=%d\n", (seqNo % 255));
     if((read = receiveDataPacket(&buffer, (seqNo % 255), fd))<0)
       exit(1);
 
     noBytes += read;
-	printf("noBytes=%d\n",noBytes);
+    printf("seqNo received=%d\n",(seqNo%255));
+	   printf("Bytes accumulated=%d\n",noBytes);
 
     if((written=fwrite(buffer, sizeof(char), read, traF->file))>0) {
-		printf("%d bytes written to file!\n", written);
+		printf("%d bytes written to file!\n\n", written);
 	}
 	else {
 		return 1;
@@ -315,7 +312,6 @@ int receiveFile(int fd) {
     seqNo++;
   }
 
-	printf("Before closing file!\n");
   transferFileClose();
 
   if(receiveControlPacket(END_BYTE, &fileSize, &filePath, fd)) {
@@ -323,7 +319,7 @@ int receiveFile(int fd) {
     exit(1);
   }
 	else {
-	printf("Control packet successfully received!\n");
+	printf("End control packet received!\n");
 	}
 
   return 0;

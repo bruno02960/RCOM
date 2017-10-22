@@ -87,8 +87,6 @@ int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePat
     fileSize[valueIndex - 3] = '\0';
     (*noBytes) = atoi((char*)fileSize);
 
-	printf("noBytes=%d\n",(*noBytes));
-
     if((controlPacket[valueIndex++] - '0') != FILE_NAME)
       printf("Unexpected parameter!\n");
 
@@ -129,10 +127,6 @@ int receiveDataPacket(unsigned char ** buffer, int sequenceNumber, int fd) {
 
     int l2 = dataPacket[2], l1 = dataPacket[3];
     read = 256 * l2 + l1;
-
-	printf("l1=%d\n",l1);
-	printf("l2=%d\n",l2);
-	printf("read=%d\n",read);
 
     memcpy((*buffer), &dataPacket[4], read);
     free(dataPacket);
