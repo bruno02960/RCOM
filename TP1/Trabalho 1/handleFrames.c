@@ -85,7 +85,6 @@ int counter = 0;
       exit(1);
     }
 
-
     return 0;
 }
 
@@ -168,6 +167,7 @@ unsigned char* receiveFrame(FrameResponse *fResp, int *fSize, int fd) {
     if(dataType==1) {
       unsigned char bcc2 = 0;
       int dataInd;
+      (*fResp) = 0;
 
       int size = ind;
 

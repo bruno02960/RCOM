@@ -14,9 +14,9 @@ int writeControlPacket(int controlField, int fd) {
 
     unsigned char controlPacket[ctrlPkSize];
 
-    controlPacket[0] = controlField + '0';
-    controlPacket[1] = FILE_SIZE + '0';
-    controlPacket[2] = strlen((char*)fileSize) + '0';
+    controlPacket[0] = controlField;
+    controlPacket[1] = FILE_SIZE ;
+    controlPacket[2] = strlen((char*)fileSize);
 
     int index = 3;
     int k;
@@ -24,13 +24,13 @@ int writeControlPacket(int controlField, int fd) {
     for(k = 0; k < strlen((char*)fileSize); k++, index++)
       controlPacket[index] = fileSize[k];
 
-    controlPacket[index++] = FILE_NAME + '0';
-    controlPacket[index++] = strlen(FILE_PATH) + '0';
+    controlPacket[index++] = FILE_NAME;
+    controlPacket[index++] = strlen(FILE_PATH);
 
     for(k = 0; k < strlen(FILE_PATH); k++, index++)
       controlPacket[index] = FILE_PATH[k];
 
-    if(llwrite(controlPacket, ctrlPkSize, fd) < 0) {
+    if(llwrite(controlPacket, ctrlPkSize, fd) != 0) {
       printf("Error on llwrite!\n");
       return 1;
     }
@@ -43,15 +43,15 @@ int writeDataPacket(unsigned char* buffer, int noBytes, int seqNo, int fd) {
 
     unsigned char dataPacket[dataPkSize];
 
-    dataPacket[0] = DATA_BYTE + '0';
-    dataPacket[1] = seqNo + '0';
+    dataPacket[0] = DATA_BYTE;
+    dataPacket[1] = seqNo;
 
     /* K = 256 * dataPacket[2] + dataPacket[3] */
     dataPacket[2] = noBytes / 256;
     dataPacket[3] = noBytes % 256;
     memcpy(&dataPacket[4], buffer, noBytes);
 
-    if(llwrite(dataPacket, dataPkSize, fd) < 0) {
+    if(llwrite(dataPacket, dataPkSize, fd) != 0) {
       printf("Error on llwrite!\n");
       return 1;
     }
@@ -67,17 +67,17 @@ int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePat
       return 1;
     }
 
-    if((controlPacket[0] - '0') != controlField) {
+    if((controlPacket[0]) != controlField) {
       printf("Unexpected control field!\n");
       return 1;
     }
 
-    if((controlPacket[1] - '0') != FILE_SIZE) {
+    if((controlPacket[1]) != FILE_SIZE) {
       printf("Unexpected parameter!\n");
       return 1;
     }
 
-    int lengthSize = (controlPacket[2] - '0');
+    int lengthSize = (controlPacket[2]);
     int i, valueIndex = 3;
     unsigned char fileSize[STR_SIZE];
 
@@ -87,10 +87,10 @@ int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePat
     fileSize[valueIndex - 3] = '\0';
     (*noBytes) = atoi((char*)fileSize);
 
-    if((controlPacket[valueIndex++] - '0') != FILE_NAME)
+    if((controlPacket[valueIndex++]) != FILE_NAME)
       printf("Unexpected parameter!\n");
 
-    int lengthPath = (controlPacket[valueIndex++] - '0');
+    int lengthPath = (controlPacket[valueIndex++]);
     unsigned char path[STR_SIZE];
 
     for (i = 0; i < lengthPath; i++)
@@ -112,8 +112,8 @@ int receiveDataPacket(unsigned char ** buffer, int sequenceNumber, int fd) {
       exit(1);
     }
 
-    int controlField = dataPacket[0] - '0';
-    int seqNo = dataPacket[1] - '0';
+    int controlField = dataPacket[0];
+    int seqNo = dataPacket[1];
 
     if(controlField != DATA_BYTE) {
       printf("Unexpected control field!\n");

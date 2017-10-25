@@ -26,10 +26,6 @@ int transferFileInit(int status) {
             exit(1);
         }
     }
-    else if (!(traF->file = fopen(FILE_PATH, "wb"))) {
-        printf("Unable to open file!\n");
-        exit(1);
-    }
 
 	printf("Transfer file opened!\n");
 
@@ -96,8 +92,13 @@ int receiveFile(int fd) {
     exit(1);
   }
   else {
-	printf("Star control packet received!\n\n");
+	printf("Start control packet received!\n\n");
   }
+
+	if (!(traF->file = fopen((char*) filePath, "wb"))) {
+        printf("Unable to open file!\n");
+        exit(1);
+    }
 
   int read, noBytes = 0, seqNo = 0, written = 0;
   unsigned char * buffer = malloc(PACKET_SIZE * sizeof(char));

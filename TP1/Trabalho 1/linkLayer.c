@@ -116,20 +116,21 @@ int llwrite(unsigned char * buffer, int length, int fd) {
     receiveFrame(NULL, NULL, fd);
 
     if (linkL->frame[2] == (CTRL_RR | (linkL->sequenceNumber<<5))) {
-       stopAlarm(fd);
-	linkL->sequenceNumber=!linkL->sequenceNumber;
-  break;
+		stopAlarm(fd);
+		linkL->sequenceNumber=!linkL->sequenceNumber;
+		break;
       }
    else if (linkL->frame[2] == (CTRL_REJ | (linkL->sequenceNumber<<5))) {
       }
     }
 
     if (alarmCounter < NO_TRIES) {
-	return 0;
+		return 0;
 	}
     else {
-      printf("Couldn't write!\n");
-return 1;
+      stopAlarm(fd);
+		printf("Couldn't write!\n");
+		return 1;
 	}
 
   return 1;
@@ -214,6 +215,7 @@ int llclose(int fd) {
         alarmCounter++;
       }
 
+      sleep(1);
       receiveFrame(NULL, NULL, fd);
 
       if (linkL->frame[2] == CTRL_UA) {
