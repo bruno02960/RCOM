@@ -59,6 +59,7 @@ int linkLayerInit(char * port, int status) {
 
 int llopen(int fd) {
     int alarmCounter = 0;
+    int fSize;
 
     switch (appL->status) {
       case TRANSMITTER:
@@ -70,7 +71,7 @@ int llopen(int fd) {
                   alarmCounter++;
               }
 
-              receiveFrame(NULL, NULL, fd);
+              receiveFrame(&fSize, fd);
 
               if (linkL->frame[2] == CTRL_UA) {
                   break;
@@ -86,7 +87,7 @@ int llopen(int fd) {
           break;
 
       case RECEIVER:
-          receiveFrame(NULL, NULL, fd);
+          receiveFrame(&fSize, fd);
 
           if (linkL->frame[2] == CTRL_SET) {
               writeNonDataFrame(UA, fd);
@@ -104,6 +105,7 @@ int llopen(int fd) {
 
 int llwrite(unsigned char * buffer, int length, int fd) {
   int alarmCounter = 0;
+  int fSize;
 
   while (alarmCounter < NO_TRIES){
     if (alarmCounter == 0 || alarmFlag == 1) {
@@ -113,7 +115,7 @@ int llwrite(unsigned char * buffer, int length, int fd) {
       alarmCounter++;
     }
 
-    receiveFrame(NULL, NULL, fd);
+    receiveFrame(&fSize, fd);
 
     if (linkL->frame[2] == (CTRL_RR | (linkL->sequenceNumber<<5))) {
 		stopAlarm(fd);
@@ -137,38 +139,42 @@ int llwrite(unsigned char * buffer, int length, int fd) {
 }
 
 int llread(unsigned char ** buffer, int fd) {
-  int read = 0, fSize, dataSize, answered = 0;
+  int fSize, dataSize, answered = 0;
   FrameResponse fResp = 0;
 
   while (answered == 0)
   {
-    receiveFrame(&fResp, &fSize, fd);
+    if(receiveFrame(&fSize,fd) == DATA) {
+      processDataFrame(&fResp, fSize);
+    }
 
 		if(fResp == RESP_RR && ((linkL->frame[2]>>5) & BIT(0)) == linkL->sequenceNumber)
 		{
-            writeNonDataFrame(RR, fd);
+          writeNonDataFrame(RR, fd);
           linkL->sequenceNumber = !linkL->sequenceNumber;
           dataSize = fSize - DATA_SIZE;
           *buffer = malloc(dataSize);
           memcpy(*buffer, &linkL->dataFrame[4], dataSize);
           answered = 1;
-        }
-        else
-          if (fResp == RESP_REJ)
+    }
+    else
+      if (fResp == RESP_REJ)
 			{
             linkL->sequenceNumber = ((linkL->frame[2]>>5) & BIT(0));
             writeNonDataFrame(REJ, fd);
-          	}
+      }
   }
 
-  return read;
+  return 0;
 }
 
 int llclose(int fd) {
   int alarmCounter = 0;
   int discReceived = 0;
+  int fSize;
 
-  switch (appL -> status) {
+  switch (appL -> status)
+  {
   case TRANSMITTER:
     while (alarmCounter < NO_TRIES) {
 
@@ -179,7 +185,7 @@ int llclose(int fd) {
         alarmCounter++;
       }
 
-      receiveFrame(NULL, NULL, fd);
+      receiveFrame(&fSize, fd);
 
       if (linkL->frame[2] == CTRL_DISC) {
         writeNonDataFrame(UA, fd);
@@ -200,9 +206,9 @@ int llclose(int fd) {
     break;
 
   case RECEIVER:
-    while (alarmCounter < NO_TRIES) {
-
-	 receiveFrame(NULL, NULL, fd);
+    while (alarmCounter < NO_TRIES)
+    {
+	     receiveFrame(&fSize, fd);
 
       if (linkL->frame[2] == CTRL_DISC) {
         discReceived = 1;
@@ -216,7 +222,7 @@ int llclose(int fd) {
       }
 
       sleep(1);
-      receiveFrame(NULL, NULL, fd);
+      receiveFrame(&fSize, fd);
 
       if (linkL->frame[2] == CTRL_UA) {
         break;
@@ -225,11 +231,13 @@ int llclose(int fd) {
 
     stopAlarm(fd);
 
-    if (alarmCounter < NO_TRIES) {
+    if (alarmCounter < NO_TRIES)
+    {
       printf("Disconnection done!\n");
       return 0;
-      }
-    else {
+    }
+    else
+    {
       printf("Disconnection couldn't be done!\n");
       return 1;
     }

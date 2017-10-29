@@ -35,13 +35,13 @@ int writeNonDataFrame(Frame frame, int fd) {
     default:
         break;
     }
-    buf[3] = buf[1] ^ buf[2];
 
+    buf[3] = buf[1] ^ buf[2];
     buf[4] = FLAG;
 
     tcflush(appL->fileDescriptor, TCOFLUSH);
 
-	int res;
+	  int res;
 
     if ((res=write(fd, &buf, 5)) != sizeof(buf)) {
         printf("Error on writting!\n");
@@ -66,7 +66,7 @@ int writeDataFrame(unsigned char* data, unsigned int length, int fd) {
 
     memcpy(&frame[4], data, length);
 
-int counter = 0;
+    int counter = 0;
 
     for(dataInd = 0; dataInd < length; dataInd++) {
         bcc2 ^= data[dataInd];
@@ -78,7 +78,7 @@ int counter = 0;
 
     frame = stuffing(frame, &size);
 
-  int res = 0;
+    int res = 0;
 
     if((res=write(fd, frame, size)) != size) {
       printf("Error on writing data frame!\n");
@@ -88,9 +88,9 @@ int counter = 0;
     return 0;
 }
 
-unsigned char* receiveFrame(FrameResponse *fResp, int *fSize, int fd) {
+int receiveFrame(int *fSize, int fd) {
     unsigned char c;
-    int res, ind=0, dataType=0;
+    int res, ind = 0;
     ReceivingState rState=0;
 
     while (alarmFlag != 1 && rState!=STOP) {
@@ -149,9 +149,6 @@ unsigned char* receiveFrame(FrameResponse *fResp, int *fSize, int fd) {
                 if (c == FLAG) {
                     linkL->frame[ind++]=c;
                     rState++;
-
-                    if(ind > 5)
-                        dataType=1;
                 }
                 else
                     linkL->frame[ind++] = c;
@@ -164,38 +161,41 @@ unsigned char* receiveFrame(FrameResponse *fResp, int *fSize, int fd) {
         }
     }
 
-    if(dataType==1) {
-      unsigned char bcc2 = 0;
-      int dataInd;
-      (*fResp) = 0;
-
-      int size = ind;
-
-    unsigned char * destuffed;
-
-    destuffed=destuffing(linkL->frame, &size);
-
-      strcpy((char*)linkL->frame, (char*)destuffed);
-
-int counter = 0;
-
-      for(dataInd = 4; dataInd < (size-2); dataInd++) {
-        bcc2 ^= destuffed[dataInd];
-counter++;
-      }
-
-      if(destuffed[size - 2] != bcc2) {
-        printf("Error on BCC2!\n");
-        (*fResp) = RESP_REJ;
-      }
-
-      if(*fResp == 0)
-        (*fResp) = RESP_RR;
-
     (*fSize) = ind;
-    memcpy(linkL->dataFrame, destuffed, size);
-    }
 
+    if(ind > 5)
+        return DATA;
+    else
+        return NON_DATA;
+}
 
-    return NULL;
+void processDataFrame(FrameResponse *fResp, int size) {
+  unsigned char bcc2 = 0;
+  int dataInd;
+  (*fResp) = 0;
+
+  int destuffedSize = size;
+
+  unsigned char * destuffed;
+
+  destuffed=destuffing(linkL->frame, &destuffedSize);
+
+  strcpy((char*)linkL->frame, (char*)destuffed);
+
+  int counter = 0;
+
+  for(dataInd = 4; dataInd < (destuffedSize-2); dataInd++) {
+    bcc2 ^= destuffed[dataInd];
+    counter++;
+  }
+
+  if(destuffed[destuffedSize - 2] != bcc2) {
+    printf("Error on BCC2!\n");
+    (*fResp) = RESP_REJ;
+  }
+
+  if(*fResp == 0)
+    (*fResp) = RESP_RR;
+
+  memcpy(linkL->dataFrame, destuffed, size);
 }

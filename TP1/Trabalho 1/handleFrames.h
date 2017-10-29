@@ -25,8 +25,16 @@ typedef enum {
 }
 Frame;
 
+typedef enum {
+    DATA,
+    NON_DATA
+}
+FrameType;
+
 int writeDataFrame(unsigned char* data, unsigned int length, int fd);
 
-unsigned char* receiveFrame(FrameResponse *fResp, int *fSize, int fd);
+int receiveFrame(int *fSize, int fd);
 
 int writeNonDataFrame(Frame frame, int fd);
+
+void processDataFrame(FrameResponse *fResp, int size);

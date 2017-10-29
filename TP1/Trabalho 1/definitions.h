@@ -38,4 +38,4 @@
 
 #define STR_SIZE 128
 
-#define BIT(n) (0x01 << n)
+#define BIT(n) (1 << (n))
