@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 transferFile_t* traF;
-char* FILE_PATH="./pinguim.gif";
+char FILE_PATH[50];
 
 int transferFileInit(int status) {
 	struct stat st;

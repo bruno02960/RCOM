@@ -10,7 +10,7 @@ typedef struct {
 
 extern transferFile_t* traF;
 
-extern char* FILE_PATH;
+extern char FILE_PATH[50];
 
 /**
 	Opens file to be sent

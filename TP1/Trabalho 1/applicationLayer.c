@@ -31,6 +31,12 @@ int applicationLayerInit(int status) {
 
 	appL->status = status;
 
+	if(appL->status == TRANSMITTER) {
+		printf("\nWhat is the file location?\t");
+		scanf("%s",FILE_PATH);
+		printf("\n");
+	}
+
 	transferFileInit(appL->status);
 
 	return 0;
