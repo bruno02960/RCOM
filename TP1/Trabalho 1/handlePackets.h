@@ -31,4 +31,4 @@ int receiveControlPacket(int controlField, int* noBytes, unsigned char** filePat
 	@param seqNo Sequence number of the Data
 	@param fd Serial port's file descriptor
 */
-int receiveDataPacket(unsigned char ** buffer, int sequenceNumber, int fd);
+int receiveDataPacket(unsigned char** buffer, int sequenceNumber, int fd);

@@ -2,13 +2,13 @@
 #include "configs.h"
 
 typedef struct {
-	char port[20];					    /*Dispositivo /dev/ttySx, x = 0, 1*/
-	int baudRate;					 /*Velocidade de transmissão*/
-	unsigned int sequenceNumber;	/*Número de sequência da trama: 0, 1*/
-	unsigned int timeout;			/*Valor do temporizador*/
-	unsigned int numTransmissions;	/*Número de tentativas em caso de falha*/
-	unsigned char frame[PACKET_SIZE];   		/*Trama*/
-    	unsigned char dataFrame[PACKET_SIZE];           /*Trama de dados*/
+    char port[20]; /*Dispositivo /dev/ttySx, x = 0, 1*/
+    int baudRate; /*Velocidade de transmissão*/
+    unsigned int sequenceNumber; /*Número de sequência da trama: 0, 1*/
+    unsigned int timeout; /*Valor do temporizador*/
+    unsigned int numTransmissions; /*Número de tentativas em caso de falha*/
+    unsigned char frame[PACKET_SIZE]; /*Trama*/
+    unsigned char dataFrame[PACKET_SIZE]; /*Trama de dados*/
 } linkLayer_t;
 
 extern linkLayer_t* linkL;
@@ -32,14 +32,14 @@ int llopen(int fd);
     @param length data packet size
     @param fd serial port's file descriptor
 */
-int llwrite(unsigned char * buffer, int length, int fd);
+int llwrite(unsigned char* buffer, int length, int fd);
 
 /**
     * Receiver reads frames from the Transmitter
     @param buffer data packet
     @param fd serial port's file descriptor
 */
-int llread(unsigned char ** buffer, int fd);
+int llread(unsigned char** buffer, int fd);
 
 /**
     * Closes the connection

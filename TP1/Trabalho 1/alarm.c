@@ -9,57 +9,56 @@
 int alarmFlag = 0;
 int fileDescriptor = 0;
 
-void setVMIN (int noChars) {
+void setVMIN(int noChars)
+{
+    struct termios oldtio;
 
-	struct termios oldtio;
+    /* save current port settings */
+    if (tcgetattr(appL->fileDescriptor, &oldtio) == -1) {
+        perror("tcgetattr");
+        exit(-1);
+    }
 
-	/* save current port settings */
-	if ( tcgetattr(appL->fileDescriptor,&oldtio) == -1)
-	{ 
-		perror("tcgetattr");
-		exit(-1);
-	}
+    oldtio.c_cc[VMIN] = noChars;
 
-  	oldtio.c_cc[VMIN] = noChars;   
+    if (tcflush(appL->fileDescriptor, TCIFLUSH) == -1) {
+        perror("tcflush");
+        exit(-1);
+    }
 
-	if ( tcflush(appL->fileDescriptor, TCIFLUSH) == -1) {
-		perror("tcflush");
-		exit(-1);
-	}
-
-	if ( tcsetattr(appL->fileDescriptor,TCSANOW,&oldtio) == -1) 
-	{
-		perror("tcsetattr");
-		exit(-1);
-	}
+    if (tcsetattr(appL->fileDescriptor, TCSANOW, &oldtio) == -1) {
+        perror("tcsetattr");
+        exit(-1);
+    }
 }
 
 void alarmHandler()
 {
-	printf("Alarm!\n");
-	
-	alarmFlag = 1;
+    printf("Alarm!\n");
 
-	setVMIN(0);
+    alarmFlag = 1;
+
+    setVMIN(0);
 }
 
+void setAlarm(int fd)
+{
+    (void)signal(SIGALRM, alarmHandler);
 
-void setAlarm(int fd) {
-	(void) signal(SIGALRM, alarmHandler);
+    alarmFlag = 0;
 
-	alarmFlag = 0;
+    setVMIN(1);
 
-	setVMIN(1);
+    alarm(linkL->timeout);
 
-	alarm(linkL->timeout);
-
-	fileDescriptor=fd;
+    fileDescriptor = fd;
 }
 
-void stopAlarm(int fd) {
-	(void) signal(SIGALRM, NULL);
+void stopAlarm(int fd)
+{
+    (void)signal(SIGALRM, NULL);
 
-	alarm(0);
+    alarm(0);
 
-	fileDescriptor=fd;
+    fileDescriptor = fd;
 }

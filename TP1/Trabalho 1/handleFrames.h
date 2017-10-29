@@ -7,14 +7,12 @@ typedef enum {
     C_RCV,
     BCC_OK,
     STOP
-}
-ReceivingState;
+} ReceivingState;
 
 typedef enum {
     RESP_RR,
     RESP_REJ
-}
-FrameResponse;
+} FrameResponse;
 
 typedef enum {
     SET,
@@ -22,19 +20,17 @@ typedef enum {
     UA,
     RR,
     REJ
-}
-Frame;
+} Frame;
 
 typedef enum {
     DATA,
     NON_DATA
-}
-FrameType;
+} FrameType;
 
 int writeDataFrame(unsigned char* data, unsigned int length, int fd);
 
-int receiveFrame(int *fSize, int fd);
+int receiveFrame(int* fSize, int fd);
 
 int writeNonDataFrame(Frame frame, int fd);
 
-void processDataFrame(FrameResponse *fResp, int size);
+void processDataFrame(FrameResponse* fResp, int size);
