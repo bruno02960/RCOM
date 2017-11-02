@@ -65,7 +65,7 @@ int sendFile(int fd)
 
         noBytes += read;
 
-        printf("Bytes accumulated = %d\n", noBytes);
+        printf("Bytes accumulated = %.2f\n", (noBytes/traF->fileSize * 100));
         printf("seqNo sent = %d\n\n", (seqNo % 255));
 
         seqNo++;
@@ -111,7 +111,7 @@ int receiveFile(int fd)
 
         noBytes += read;
         printf("seqNo received = %d\n", (seqNo % 255));
-        printf("Bytes accumulated = %d\n", noBytes);
+        printf("Bytes accumulated = %.2f\n", (noBytes/fileSize * 100));
 
         if ((written = fwrite(buffer, sizeof(char), read, traF->file)) > 0) {
             printf("%d bytes written to file!\n\n", written);
