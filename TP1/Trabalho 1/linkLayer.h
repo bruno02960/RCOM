@@ -1,5 +1,6 @@
 #pragma once
 #include "configs.h"
+#include <time.h>
 
 typedef struct {
     char port[20]; /*Dispositivo /dev/ttySx, x = 0, 1*/
@@ -10,6 +11,9 @@ typedef struct {
     unsigned char frame[PACKET_SIZE]; /*Trama*/
     unsigned char dataFrame[PACKET_SIZE]; /*Trama de dados*/
 } linkLayer_t;
+
+double getElapsedTimeSecs(struct timespec* start, struct timespec* end);
+
 
 extern linkLayer_t* linkL;
 

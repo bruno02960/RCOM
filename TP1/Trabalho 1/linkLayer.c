@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <termios.h>
+
+#include <math.h>
 #include <unistd.h>
 #include <errno.h>
 #include "alarm.h"
@@ -17,6 +19,7 @@ linkLayer_t* linkL;
 
 int linkLayerInit(char* port, int status)
 {
+    srand(time(NULL));
     linkL = (linkLayer_t*)malloc(sizeof(linkLayer_t));
 
     strcpy(linkL->port, port);
@@ -31,6 +34,8 @@ int linkLayerInit(char* port, int status)
 
     saveAndSetTermios();
 
+    struct timespec start, end;
+
     if (llopen(fd)) {
         printf("Error in llopen!\n");
         exit(1);
@@ -41,6 +46,7 @@ int linkLayerInit(char* port, int status)
         sendFile(fd);
         break;
     case RECEIVER:
+        clock_gettime(CLOCK_REALTIME, &start);
         receiveFile(fd);
         break;
     default:
@@ -51,6 +57,15 @@ int linkLayerInit(char* port, int status)
         printf("Error in llclose!\n");
         exit(1);
     }
+
+
+  clock_gettime(CLOCK_REALTIME, &end);
+  printf("Time elapsed: %f s\n", getElapsedTimeSecs(&start, &end));
+
+  unsigned int fileSize = 10968;
+
+  printf("Tf = %f s\n", getElapsedTimeSecs(&start, &end)/(fileSize*1.0 / PACKET_SIZE));
+
 
     closeSerialPort(fd);
 
@@ -140,6 +155,7 @@ int llwrite(unsigned char* buffer, int length, int fd)
     return 1;
 }
 
+
 int llread(unsigned char** buffer, int fd)
 {
     int fSize, dataSize, answered = 0;
@@ -151,6 +167,12 @@ int llread(unsigned char** buffer, int fd)
         }
 
         if (fResp == RESP_RR && ((linkL->frame[2] >> 5) & BIT(0)) == linkL->sequenceNumber) {
+
+
+            int T_PROP = 0;
+            usleep(T_PROP*1000);
+
+
             writeNonDataFrame(RR, fd);
             linkL->sequenceNumber = !linkL->sequenceNumber;
             dataSize = fSize - DATA_SIZE;
@@ -241,4 +263,8 @@ int llclose(int fd)
     }
 
     return 0;
+}
+
+double getElapsedTimeSecs(struct timespec* start, struct timespec* end){
+  return (end->tv_sec + end->tv_nsec/1000000000.0) - (start->tv_sec + start->tv_nsec/1000000000.0);
 }

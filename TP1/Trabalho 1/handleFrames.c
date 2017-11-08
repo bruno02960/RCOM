@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <termios.h>
 
+#define FER 0
+
 int writeNonDataFrame(Frame frame, int fd)
 {
     unsigned char buf[COMMAND_SIZE];
@@ -191,7 +193,7 @@ void processDataFrame(FrameResponse* fResp, int size)
         counter++;
     }
 
-    if (destuffed[destuffedSize - 2] != bcc2) {
+    if (destuffed[destuffedSize - 2] != bcc2 ) {
         printf("Error on BCC2!\n");
         (*fResp) = RESP_REJ;
     }
@@ -200,4 +202,10 @@ void processDataFrame(FrameResponse* fResp, int size)
         (*fResp) = RESP_RR;
 
     memcpy(linkL->dataFrame, destuffed, size);
+}
+
+int error(float errorRatio){
+  if((rand() % 100 + 1) <= errorRatio*100)
+    return 1;
+  return 0;
 }

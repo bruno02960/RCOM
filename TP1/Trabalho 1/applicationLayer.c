@@ -19,6 +19,7 @@ struct termios oldtio, newtio;
 
 int applicationLayerInit(int status)
 {
+    srand(time(NULL));
     appL = (applicationLayer_t*)malloc(sizeof(applicationLayer_t));
 
     if ((appL->fileDescriptor = open(linkL->port, O_RDWR | O_NOCTTY)) < 0) {

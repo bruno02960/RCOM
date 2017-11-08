@@ -59,3 +59,5 @@ int writeNonDataFrame(Frame frame, int fd);
 * @param size Frame size
 */
 void processDataFrame(FrameResponse* fResp, int size);
+
+int error(float errorRatio);
