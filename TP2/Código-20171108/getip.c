@@ -5,15 +5,6 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
-int main(int argc, char *argv[])
-{
-	struct hostent *h;
-
-  if (argc != 2) {
-      fprintf(stderr,"usage: getip address\n");
-      exit(1);
-  }
-
 	/*
 		First, we get ipByHost -> not sure if it's for now
 		FTP FUNCTIONS AND IN ORDER OF CALL:
@@ -24,6 +15,16 @@ int main(int argc, char *argv[])
 			FTPTransfer
 			FTPDisconnect
 	*/
+
+int main(int argc, char *argv[])
+{
+	struct hostent *h;
+
+  if (argc != 2) {
+      fprintf(stderr,"usage: getip address\n");
+      exit(1);
+  }
+
 
 /*
 struct hostent {
