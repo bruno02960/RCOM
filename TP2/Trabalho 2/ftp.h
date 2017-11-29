@@ -18,9 +18,9 @@
 #include <netinet/in.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
 
-#define SERVER_PORT   6000              // PORT
-#define SERVER_ADDR   "192.168.28.96"   // IP
 #define STR_SIZE      256               // Max string size
 #define CODE_LENGTH   3                 //SMTP reply code length
 #define COMMAND_PORT  21
