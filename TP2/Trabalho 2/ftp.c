@@ -309,13 +309,11 @@ int main(int argc, char* argv[]) {
 		printf("Error on connectToSocket\n");
 		exit(1);
 	}
-  printf("username = %s\tpassword = %s\t\nhost = %s\turl_path = %s\tfile_name = %s\n", user->username, user->password, url->host, url->path, url->file_name);
 
 	if (login(command_sockfd) == -1) {
 		printf("Error on login()\n");
 		exit(1);
 	}
-  printf("username = %s\tpassword = %s\t\nhost = %s\turl_path = %s\tfile_name = %s\n", user->username, user->password, url->host, url->path, url->file_name);
 
 	if (getDataPort(command_sockfd, &data_port) == -1) {
 		printf("Error on getDataPort()\n");
