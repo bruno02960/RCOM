@@ -135,16 +135,18 @@ int getDataPort(int socket, int *data_port) {
 
 int getIP() {
 	struct hostent *h;
-	  char* ip;
+	char ip[STR_SIZE];
 
-	  if ((h=gethostbyname(url->host)) == NULL) {
-	      herror("gethostbyname");
-	      exit(1);
-	  }
+	if ((h=gethostbyname(url->host)) == NULL) {
+	herror("gethostbyname");
+	exit(1);
+	}
 
-	  strcpy(ip, inet_ntoa(*((struct in_addr *) h->h_addr)));
-	  url->ip = (char*)malloc(strlen(ip) + 1);
-	  strcpy(url->ip, ip);
+	strcpy(ip, inet_ntoa(*((struct in_addr *) h->h_addr)));
+
+	url->ip = (char*)malloc(strlen(ip) + 1);
+
+	strcpy(url->ip, ip);
 
 	return 0;
 }
