@@ -26,8 +26,8 @@
 #define COMMAND_PORT  21
 
 typedef struct {
-        char*   host;       // host or host:port
-        char*   path;       // path (relative paths may omit leading slash)
+        char*   host;       // host
+        char*   path;       // path
         char*   file_name;
         char*   ip;
 } url_t;

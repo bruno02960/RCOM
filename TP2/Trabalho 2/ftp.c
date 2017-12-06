@@ -35,7 +35,7 @@ int connectToSocket(int port){
 			return -1;
 		}
 
-		printf("<");
+		printf("< ");
 
 		while(fgets(buf, 5, fp)) {
 			printf("%s", buf);
@@ -143,7 +143,7 @@ int getIP() {
 	  }
 
 	  strcpy(ip, inet_ntoa(*((struct in_addr *) h->h_addr)));
-	  url->ip = (char*)malloc(sizeof(strlen(ip) + 1));
+	  url->ip = (char*)malloc(strlen(ip) + 1);
 	  strcpy(url->ip, ip);
 
 	return 0;
@@ -179,15 +179,15 @@ int parseURL(char* full_url) {
 
 		}
 
-		user->username = (char*)malloc(sizeof(username + 1));
-	  user->password = (char*)malloc(sizeof(password + 1));
-	  strcpy(user->username, username);
-	  strcpy(user->password, password);
+		user->username = (char*)malloc(strlen(username) + 1);
+		user->password = (char*)malloc(strlen(password) + 1);
+		strcpy(user->username, username);
+		strcpy(user->password, password);
 	}
 	else {
 		/*case no username nor password*/
-		user->username = (char*)malloc(sizeof("anonymous"));
-		user->password = (char*)malloc(sizeof("anonymous"));
+		user->username = (char*)malloc(strlen("anonymous"+1));
+		user->password = (char*)malloc(strlen("anonymous"+1));
 		strcpy(user->username,"anonymous");
 		strcpy(user->password,"anonymous");
 	}
@@ -211,11 +211,15 @@ int parseURL(char* full_url) {
     return 1;
   }
 
-  url->host = (char*)malloc(sizeof(host + 1));
-  url->path = (char*)malloc(sizeof(url_path + 1));
+  url->host = (char*)malloc(strlen(host) + 1);
+  url->path = (char*)malloc(strlen(url_path) + 1);
+
+
 
   strcpy(url->host, host);
+printf("HOST = %s\n", url->host);
   strcpy(url->path, url_path);
+	
 
 	/*get filename*/
   char fileName[strlen(url_path) + 1];
@@ -226,7 +230,7 @@ int parseURL(char* full_url) {
 		strcpy(fileName, current + 1);
 	}
 
-	url->file_name = (char*)malloc(sizeof(fileName + 1));
+	url->file_name = (char*)malloc(strlen(fileName) + 1);
 
 	strcpy(url->file_name, fileName);
 }
@@ -303,11 +307,13 @@ int main(int argc, char* argv[]) {
 		printf("Error on connectToSocket\n");
 		exit(1);
 	}
+  printf("username = %s\tpassword = %s\t\nhost = %s\turl_path = %s\tfile_name = %s\n", user->username, user->password, url->host, url->path, url->file_name);
 
 	if (login(command_sockfd) == -1) {
 		printf("Error on login()\n");
 		exit(1);
 	}
+  printf("username = %s\tpassword = %s\t\nhost = %s\turl_path = %s\tfile_name = %s\n", user->username, user->password, url->host, url->path, url->file_name);
 
 	if (getDataPort(command_sockfd, &data_port) == -1) {
 		printf("Error on getDataPort()\n");
