@@ -1,3 +1,0 @@
-#copiar isto para o file: /etc/resolv.conf
-search netlab.fe.up.pt
-nameserver 172.16.2.1
