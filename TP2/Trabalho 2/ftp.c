@@ -219,7 +219,6 @@ int parseURL(char* full_url) {
 
 
   strcpy(url->host, host);
-printf("HOST = %s\n", url->host);
   strcpy(url->path, url_path);
 	
 
@@ -303,7 +302,7 @@ int main(int argc, char* argv[]) {
   printf("username = %s\tpassword = %s\t\nhost = %s\turl_path = %s\tfile_name = %s\n", user->username, user->password, url->host, url->path, url->file_name);
 
   getIP();
-  printf("ip = %s\n", url->ip);
+  printf("ip = %s\n\n", url->ip);
 
   if ((command_sockfd = connectToSocket(COMMAND_PORT)) == -1)	{
 		printf("Error on connectToSocket\n");
